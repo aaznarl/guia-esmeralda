@@ -98,6 +98,9 @@ class AmpliarTablaTareas extends Migration
             $table->foreign('user_id')
                 ->references('id')->on('users');
         });
+        
+        // Si se trata de una tabla maestra, hay que poblarla:
+        Artisan::call('db:seed', ['--class' => TiposLiquidacionesSeeder::class]);
     }
 
     /**
@@ -144,6 +147,8 @@ class Objetivo extends Model
     protected $table = 'objetivos';    
     protected $guarded = ['id', 'created_at', 'updated_at', 'deleted_at', 'user_id'];
 
+    // Supported casts:
+    // https://laravel.com/docs/5.8/eloquent-mutators#attribute-casting
     protected $casts = [
         'activo' => 'boolean',
         'conseguido_at' => 'datetime'
@@ -185,6 +190,12 @@ class Objetivo extends Model
 
 
 ## Crear la Factory
+
+Para crear el fichero, ejecutar ([referencia](https://laravel.com/docs/5.8/database-testing#generating-factories)):
+
+```bash
+php artisan make:factory PostFactory --model=Post
+```
 
 Ejemplo de código completo para crear una factory:
 
@@ -292,6 +303,7 @@ class ObjetivosSeeder extends Seeder
      * Le añadimos entre 1 y 3 objetivos (aleatorio) a cada usuario 
      *
      * @return void
+     * @throws Exception
      */
     public function run()
     {
