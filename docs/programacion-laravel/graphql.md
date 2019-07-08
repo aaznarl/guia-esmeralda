@@ -10,6 +10,63 @@ Tabla de contenidos:
 [[TOC]]
 
 
+## Definir el esquema GraphQL
+
+Dado un modelo, lo primero es definir el esquema GraphQL de ese modelo,
+es decir, definir qué se va a exponer a través de la API. Lo mejor es tenerlo separado
+en un fichero aparte, e incluirlo desde el fichero general "schema.graphql":
+
+```graphql
+#import ./users.graphql
+```
+
+Y este sería el fichero conde se define el tipo "User" y se definen Queries y Mutations
+para el mismo:
+
+```graphql
+type User {
+    id: ID!
+    name: String!
+    email: String
+    samaccountname: String
+    userprincipalname: String
+    distinguishedname: String
+    roles: [Rol] @method(name: "getRoles")
+    grupos: [String]
+    fechaInicioCache: String
+    fechaFinCache: String
+    tiempoExpiracionCache: String
+    persona_id: ID
+    persona: Persona @belongsTo
+
+    canViewTelescope: Boolean!
+    canViewPageAdmin: Boolean!
+    canViewButtomCreate: Boolean!
+    canViewButtomEdit: Boolean!
+    canViewButtomDelete: Boolean!
+    
+    created_at: DateTime!
+    updated_at: DateTime!
+    deleted_at: DateTime
+}
+
+extend type Query {
+    me: User @auth
+    quienSoy: String @field(resolver: "App\\Http\\GraphQL\\Queries\\UserQuery@quienSoy")
+    usuarios: [User] @all
+}
+
+extend type Mutation {
+   login(username: String!, password: String!): User @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@login")
+   refreshLdapUser: Boolean @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@refreshLdapUser")
+   refreshLdap: Boolean @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@refreshLdap")
+   generateERD: Boolean @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@generateERD")
+}
+``` 
+
+
+
+
 ## Ejemplo Resolver: findById
 
 Lo primero sería añadir el nodo en el esquema del árbol graphQL:

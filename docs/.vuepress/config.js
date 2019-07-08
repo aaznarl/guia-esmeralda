@@ -27,6 +27,7 @@ module.exports =
             '/funcionamiento-esta-guia/',
             'instalacion-entorno-desarrollo/',
             'programacion-laravel/',
+            'programacion-vue/',
             'test/',
             'usabilidad/'
         ]        

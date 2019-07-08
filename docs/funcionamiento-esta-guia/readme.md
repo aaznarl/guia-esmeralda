@@ -9,6 +9,14 @@ Para trabajar en desarrollo, desde la **raíz del proyecto**, ejecutar:
 yarn vuepress dev docs
 ```
 
+Para construir la web estática del proyecto en la carpeta **docs\.vuepress\dist**, ejecutar:
+
+```bash
+yarn vuepress build docs
+```
+
+
+
 ## Configurar la web
 
 Referencias:
