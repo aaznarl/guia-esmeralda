@@ -336,4 +336,76 @@ property:
 ```
 
 
+## Gestión de errores en Vue
+
+Vue permite definir, tras crear el objeto Vue principal de la aplicación, una función a la que llamar
+cuando se produzca un error:
+
+```javascript app.js
+Vue.config.errorHandler = (err, vm) => {
+  manejarErrorVue(err, vm);
+};
+```
+
+Esa función puede notificar a la aplicación de que se ha producido un error en cliente, para que
+se registre adecuadamente en el sistema de log que tenga (BD, log, email, slack...):
+
+```javascript
+import gql from 'graphql-tag';
+
+export function manejarErrores(err, vm) {
+  const w = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+  const h = Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+  const newURL = `${window.location.protocol}//${window.location.host}/${window.location.pathname}`;
+  let navegador = '';
+  if ((navigator.userAgent.indexOf('Opera') || navigator.userAgent.indexOf('OPR')) !== -1) {
+    navegador = 'Opera';
+  } else if (navigator.userAgent.indexOf('Chrome') !== -1) {
+    navegador = 'Chrome';
+  } else if (navigator.userAgent.indexOf('Safari') !== -1) {
+    navegador = 'Safari';
+  } else if (navigator.userAgent.indexOf('Firefox') !== -1) {
+    navegador = 'Firefox';
+  } else if (navigator.userAgent.indexOf('MSIE') !== -1 || !!document.documentMode === true) {
+    // IF IE > 10
+    navegador = 'IE';
+  } else {
+    navegador = 'unknown';
+  }
+  vm.$apollo.query({
+    query: gql`
+        {
+          enviarEmailErrorCliente(
+            titulo:"${err.message.replace(/["']/g, '')}",
+            trazas:"${err.stack
+              .split('\n')
+              .join('')
+              .replace(/["']/g, '')}",
+            navegador:"${navegador}",
+            versionNavegador:"${navigator.appVersion}",
+            viewport:"${`${w}x${h}`}",
+            url:"${newURL}")
+        }
+      `
+  });
+}
+```
+
+La mutation que se realice en la parte back no debería hacer mucho más que lanzar
+el error para que se gestione igual que el resto de errores de la aplicación:
+
+```php
+public function registrarErrorEnCliente($parent, array $args, $context, $info)
+{
+    Throw New ErrorEnClienteException( 
+       $args['mensajeError'] . $args['navegador'] . $args['usuario'], 
+       $args['traza']
+    );
+}
+```
+
+
+
+
+
 

@@ -26,6 +26,10 @@ Referencias:
 
 ## Escribir en Markdown
 
+Referencias a la sintaxis:
+
+- [Sintaxis markdown](http://cesarhdz.com/articulos/escribir-en-markdown#sintaxis-de-markdown) 
+
 Algunas referencias rápidas:
 
 - [Tips, warnings, danger](https://vuepress.vuejs.org/guide/markdown.html#custom-containers)
