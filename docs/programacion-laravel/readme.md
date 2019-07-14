@@ -24,7 +24,53 @@ Comandos:
  php artisan make:migration crear_tablas_escenarios   # Crear las tablas de escenarios
 ```
 
-### Ejemplo de migration para crear tabla
+### Ejemplo de migration para crear una tabla maestra
+
+```php
+<?php
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
+use App\TipoOrden;
+
+class CrearTablaTiposordenes extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * @return void
+     */
+    public function up()
+    {
+        Schema::create('tiposOrdenes', function(Blueprint $table)
+        {
+            $table->unsignedInteger('id')->unique();
+            $table->string('nombre', TipoOrden::MAX_LONG_NOMBRE);
+            $table->string('descripcion', TipoOrden::MAX_LONG_DESCRIPCION)->nullable();
+            $table->boolean('obsoleto')->default(0);
+
+            $table->timestamps();
+            $table->softDeletes();
+        });
+
+        // Poblar la tabla:
+        Artisan::call('db:seed', ['--class' => TipoOrdenSeeder::class]);
+    }
+
+    /**
+     * Reverse the migrations.
+     *
+     * @return void
+     */
+    public function down()
+    {
+        Schema::dropIfExists('tiposOrdenes');
+    }
+}
+```
+
+
+### Ejemplo de migration para crear una tabla de datos
 
 ```php
 <?php
@@ -184,6 +230,15 @@ class Objetivo extends Model
         return $this->belongsToMany(Problema::class);
     }
     
+    /**
+     * Crear un atributo "computado". 
+     * 
+     * @return float
+     */
+    public function getNumeroTareasAttribute()
+    {
+        return $this->tareas->count(); 
+    }
 }
 ```
 
@@ -206,18 +261,16 @@ use App\Models\User;
 
 $factory->define(User::class, function (Faker $faker) {
     static $password;
-    $nombre = $faker->name;
-
-    // Hay que asegurarse que no excede la longitud permitida
-    if (strlen($nombre) > User::MAX_LONG_NAME) $nombre = substr($nombre, 0, User::MAX_LONG_NAME); 
     
     // A todos los usuarios les ponemos de contraseña "secret"
     return [
-        'name' => $nombre,
+        'name' => substr( $faker->name, 0, User::MAX_LONG_NAME ),
+        'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES),
         'email' => $faker->unique()->safeEmail,
         'email_verified_at' => now(),
+        'vegetariano' => random_int(1,3) === 1 ? true : false,
         'password' => $password ?: $password = bcrypt('secret'),
-        'remember_token' => str_random(10),
+        'remember_token' => Str::random(10)
     ];
 });
 
@@ -267,7 +320,7 @@ class RolesSeeder extends Seeder
     {
         $ahora = new \Carbon\Carbon();
 
-        Rol::updateOrCreate(
+        DB::table('roles')->insert([
             [
                 'id' => Rol::ID_ADMINISTRADOR,
                 'rol' => 'Administrador',
@@ -282,7 +335,7 @@ class RolesSeeder extends Seeder
                 'habilitado' => true,
                 'created_at' => $ahora
             ]
-        );
+        ]);
     }
 }
 ```
@@ -308,14 +361,16 @@ class ObjetivosSeeder extends Seeder
     public function run()
     {
         if (app()->environment() == 'production') return;  // Protección
-        $usuarios = User::all();
         
-        foreach ( $usuarios as $usuario )
+        // Puedo crear 4 usuarios si no hubiera un UserSeeder antes (que debería haberlo):
+        factory(User::class, 4)->create();
+        
+        User::all()->each( function( User $usuario)
         {
             $usuario->objetivos()->saveMany(
                 factory( Objetivo::class, rand(1,3) )->make()
             );
-        }
+        });
         
     }
 }
