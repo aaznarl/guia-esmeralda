@@ -377,4 +377,40 @@ class ObjetivosSeeder extends Seeder
 ```
 
 
+## Gestión de errores en Laravel
+
+Para registrar apropiadamente los errores nos vamos a aprovechar de las propias herramientas de Laravel, que 
+tiene un [potente sistema de logging](https://laravel.com/docs/5.8/logging). Este sistema ya ha pensado en como 
+configurar muy bien los diferentes entornos (production, local, dev, test) y también los posibles canales de log:
+
+| Canal de log	| Description | 
+| ------------	| ----------- |
+| stack	        | A wrapper to facilitate creating "multi-channel" channels | 
+| single	    | A single file or path based logger channel (StreamHandler) |
+| daily	        | A RotatingFileHandler based Monolog driver which rotates daily |
+| slack	        | A SlackWebhookHandler based Monolog driver |
+| papertrail	| A SyslogUdpHandler based Monolog driver |
+| syslog	    | A SyslogHandler based Monolog driver |
+| errorlog	    | A ErrorLogHandler based Monolog driver |
+| monolog	    | A Monolog factory driver that may use any supported Monolog handler |
+| custom	    | A driver that calls a specified factory to create a channel |
+
+La función que recoge todos los errores de la aplicación se encuentra en “**app/Exceptions/Handler.php**”:
+
+```php
+/**
+ * Report or log an exception.
+ *
+ * @param  \Exception  $exception
+ * @return void
+ */
+public function report(Exception $exception)
+{
+    //parent::report($exception);
+    Log::error($exception->message);
+}
+```
+
+
+
 
