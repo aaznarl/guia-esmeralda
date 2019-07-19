@@ -190,6 +190,7 @@ class Objetivo extends Model
 {
     use SoftDeletes;
 
+    //public $timestamps = false;  // Descomentar si no queremos que tenga los timestamps (created_at, updated_at)
     protected $table = 'objetivos';    
     protected $guarded = ['id', 'created_at', 'updated_at', 'deleted_at', 'user_id'];
 

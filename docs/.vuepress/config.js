@@ -24,12 +24,44 @@ module.exports =
             { text: 'Google', link: 'https://google.com' },
         ],
         sidebar: [
-            '/funcionamiento-esta-guia/',
-            'instalacion-entorno-desarrollo/',
-            'programacion-laravel/',
-            'programacion-vue/',
-            'test/',
-            'usabilidad/'
+            {
+                title: 'Introducción',
+                collapsable: true,
+                children: [
+                    '/funcionamiento-esta-guia/',
+                ]
+            },
+            {
+                title: 'Preparación entornos',
+                collapsable: true,
+                children: [
+                    'instalacion-entorno-desarrollo/',
+                ]
+            },
+            {
+                title: 'Laravel',
+                collapsable: true,
+                children: [
+                    'programacion-laravel/',
+                    'programacion-laravel/graphql.md',
+                    'programacion-laravel/test.md',
+                ]
+            },
+            {
+                title: 'Vue.js',
+                collapsable: true,
+                children: [
+                    'programacion-vue/',
+                ]
+            },
+            {
+                title: 'Usabilidad',
+                collapsable: true,
+                children: [
+                    'usabilidad/'
+                ]
+            }
+            
         ]        
     }    
 };

@@ -8,7 +8,6 @@
 - [Programación en Vue](programacion-vue/readme.md)
 - Programación en Javascript
 - Programación en CSS
-- [Test](test/readme.md)
 - [Usabilidad](usabilidad/readme.md)
 - Seguridad
 - Despliegues
