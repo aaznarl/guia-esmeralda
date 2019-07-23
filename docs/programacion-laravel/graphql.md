@@ -10,6 +10,17 @@ Tabla de contenidos:
 [[TOC]]
 
 
+## Scalar types
+
+La lista de puede consultar en la [lista oficial](https://graphql.org/learn/schema/#scalar-types):
+
+- Int (signed 32‐bit integer)
+- Float (signed double-precision)
+- String (UTF‐8 character sequence)
+- Boolean
+- ID
+
+
 ## Definir el esquema GraphQL
 
 Dado un modelo, lo primero es definir el esquema GraphQL de ese modelo,

@@ -1,4 +1,4 @@
-# Programación en Laravel
+# Migrations, models, factories, seeders
 
 Tabla de contenidos:
 
