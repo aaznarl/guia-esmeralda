@@ -9,7 +9,7 @@ Referencias básicas:
 [[TOC]]
 
 
-## Ejemplo: Componente Página Listado de tareas
+## Ejemplo: Página Listado simple de algo
 
 Para crear una página básica hay que crear una carpeta y meter dentro 3 ficheros:
 
@@ -19,12 +19,160 @@ Para crear una página básica hay que crear una carpeta y meter dentro 3 ficher
 
 Un ejemplo del fichero _index.js_:
 
-```js
-import MisTareas from './MisTareas';
-export default MisTareas;
+```javascript
+import MisCuentas from './MisCuentas';
+export default MisCuentas;
 ```
 
-Un ejemplo del fichero _queries.js_:
+```js
+import gql from 'graphql-tag'
+
+
+/**********************************
+ * READ misCuentas
+ **********************************/
+
+export const GET_misCuentas = gql`
+    query misCuentas {
+        misCuentas {
+            id
+            nombre
+            descripcion
+            orden
+            activa
+            claseCSS
+        }
+    }`;
+```
+
+Y por último, el componente Vue completo de la página:
+
+```js
+<template>
+    <div class="container mb-5"  style="min-height: 90vh;">
+
+        <Breadcrumbs v-bind:lista-breadcrumbs="breadcrumbs"></Breadcrumbs>
+        
+        <div class="d-flex justify-content-between flex-wrap">
+            <CabeceraPagina titulo="Mis cuentas"
+                            md-descripcion="Listado con todas las cuentas abiertas"
+            ></CabeceraPagina>
+            
+            <div class="text-right">
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        style="white-space: nowrap;"
+                        v-on:click=""
+                >Nueva cuenta</button>
+            </div>
+        </div>
+        
+        <div v-if="this.$apollo.queries.misCuentas.loading" class="mt-5">
+            Cargando la lista de cuentas
+            <img :src="assetCliente('img/loading160x20-12bbad.gif')" alt="Cargando la lista de cuentas" />
+        </div>
+
+
+        <div v-if=" ! hayCuentas && ! this.$apollo.queries.misCuentas.loading" style="min-height: 90vh;" >
+            <div class="p-3 mb-2 bg-info text-success">
+                <strong>Usted no tiene ninguna cuenta abierta</strong>
+            </div>
+        </div>
+        
+        <div v-if="hayCuentas">
+            <ListaCuentas v-bind:cuentas="misCuentas"></ListaCuentas>
+        </div>
+        
+    </div>
+</template>
+
+
+<script>
+    import CabeceraPagina from '../../components/CabeceraPagina';
+    import Breadcrumbs from '../../components/Breadcrumbs';
+    import FormularioInputTexto from '../../components/FormularioInputTexto';
+    import ListaCuentas from '../../components/ListaCuentas';
+    import { GET_misCuentas } from './queries';
+
+    export default {
+        name: 'MisCuentas',
+        components: {
+            CabeceraPagina,
+            FormularioInputTexto,
+            ListaCuentas,
+            Breadcrumbs
+        },
+        apollo: {
+            misCuentas: function () {
+                return {
+                    query: GET_misCuentas,
+                    variables: {},
+                    fetchPolicy: 'cache-and-network',
+                    error (error) {
+                        this.ajaxMisCuentas.mensajeError = 'Error al cargar la lista de cuentas';
+                        this.gestionarErroresGraphQL( error ); 
+                    }
+                }
+            }
+        },
+        data () {
+            return {
+                misCuentas: [],
+                listaBreadcrumbs: [],
+
+                ajaxMisCuentas: {
+                    mensajeError: ''
+                },
+            }
+        },
+        validations() {
+        },
+        methods: {
+        },
+        computed: {
+            hayCuentas: function ()
+            {
+                return this.misCuentas.length > 0;
+            },
+            breadcrumbs: function ()
+            {
+                return [
+                    { texto: "Mis cuentas",          componente: 'MisCuentas',      parametros: undefined }
+                ]
+            }
+        },
+        
+        watch: 
+        {
+            $route (to, from)
+            {
+                Mousetrap.reset();
+            }
+
+        },
+        
+        mounted() {
+            Mousetrap.reset();
+        }
+    }
+</script>
+
+<style scoped>
+
+    .campoTiempo
+    {
+        width: 8em;
+    }
+    
+</style>
+```
+
+
+
+
+## Ejemplo: Página Listado de tareas con filtrado y doble query
+
+Ejemplo del fichero _queries.js_:
 
 ```js
 import gql from 'graphql-tag'
@@ -63,7 +211,7 @@ export const GET_misTareas = gql`
 `;
 ```
 
-Y por último, el coponente Vue completo:
+Y por último, el componente Vue completo de la página:
 
 ```js
 <template>
