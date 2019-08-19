@@ -43,7 +43,7 @@ class TareaPolicy
      */
     public function show(User $user, Tarea $tarea)
     {
-        if ($user->id == $tarea->user_id) return true;                  // La tarea es mía
+        if ($user->id == $tarea->user_id) { return true; }                  // La tarea es mía
 
         // No se cumple ninguna de las condiciones anteriores
         return false;
@@ -58,7 +58,7 @@ class TareaPolicy
      */
     public function edit(User $user, Tarea $tarea)
     {
-        if ($user->id == $tarea->user_id) return true;                  // La tarea es mía
+        if ($user->id == $tarea->user_id) { return true; }                  // La tarea es mía
 
         // No se cumple ninguna de las condiciones anteriores
         return false;
@@ -84,7 +84,7 @@ class TareaPolicy
      */
     public function destroy(User $user, Tarea $tarea)
     {
-        if ($user->id == $tarea->user_id) return true;                  // La tarea es mía
+        if ($user->id == $tarea->user_id) { return true; }                  // La tarea es mía
 
         // No se cumple ninguna de las condiciones anteriores
         return false;

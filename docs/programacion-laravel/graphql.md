@@ -129,7 +129,7 @@ por su _id_:
     public function tareaById($parent, array $args, $context, $info)
     {
         // Autenticación
-        if ( ! auth()->check()) throw new AuthenticationException('Es necesario estar identificado para consultar esta tarea');
+        if ( ! auth()->check()) { throw new AuthenticationException('Es necesario estar identificado para consultar esta tarea'); }
 
         /** @var User $usuario */
         $usuario = auth()->user();
@@ -138,7 +138,7 @@ por su _id_:
         $tarea = Tarea::where('id', intval($args['id'])  )->first();
 
         // Autorización
-        if ( $usuario->cant('view', $tarea)) throw new AuthorizationException('No tiene permisos para ver esta tarea');
+        if ( $usuario->cant('view', $tarea)) { throw new AuthorizationException('No tiene permisos para ver esta tarea'); }
 
         return $tarea;
     }
@@ -161,7 +161,7 @@ por su _id_:
     public function misTareas($parent, array $args, $context, $info)
     {
         // Chequeo de la Autenticación
-        if ( ! auth()->check() ) throw new AuthenticationException('Es necesario estar identificado para consultar Mis tareas');
+        if ( ! auth()->check() ) { throw new AuthenticationException('Es necesario estar identificado para consultar Mis tareas'); }
 
         /** @var User $usuario */
         $usuario = auth()->user();
@@ -216,13 +216,13 @@ Y este sería un ejemplo del resolver:
     public function create($parent, array $args, $context, $info )
     {
         // Autenticación
-        if ( ! auth()->check()) throw new AuthenticationException('Es necesario estar identificado para crear una tarea');
+        if ( ! auth()->check()) { throw new AuthenticationException('Es necesario estar identificado para crear una tarea'); }
 
         /** @var User $usuario */
         $usuario = auth()->user();
 
         // Autorización
-        if ( $usuario->cant('create', Tarea::class ) ) throw new AuthorizationException('No tiene permisos para crear una tarea');
+        if ( $usuario->cant('create', Tarea::class ) ) { throw new AuthorizationException('No tiene permisos para crear una tarea'); }
 
         /** @var Tarea $tarea */
         $tarea = new Tarea([
@@ -285,17 +285,17 @@ Y este sería el código necesario para el "resolver" de la mutation:
     public function update($parent, array $args, $context, $info )
     {
         // Autenticación
-        if ( ! auth()->check()) throw new AuthenticationException('Es necesario estar identificado para modificar una tarea');
+        if ( ! auth()->check()) { throw new AuthenticationException('Es necesario estar identificado para modificar una tarea'); }
 
         /** @var User $usuario */
         $usuario = auth()->user();
 
         /** @var Tarea $tarea */
         $tarea = Tarea::where('id', intval($args['id']) )->first();
-        if ( ! $tarea ) throw new ParseException('No se ha encontrado la tarea que se pretende modificar');
+        if ( ! $tarea ) { throw new ParseException('No se ha encontrado la tarea que se pretende modificar'); }
 
         // Autorización
-        if ( $usuario->cant('edit', $tarea )) throw new AuthorizationException('No tiene permisos para modificar la tarea');
+        if ( $usuario->cant('edit', $tarea )) { throw new AuthorizationException('No tiene permisos para modificar la tarea'); }
 
         $campos = [];
         if ( array_key_exists('titulo', $args) ) $campos['titulo'] = strval( $args['titulo'] );
@@ -347,17 +347,17 @@ Y este es el "resolver" de la mutation delete:
     public function delete($parent, array $args, $context, $info )
     {
         // Autenticación
-        if ( ! auth()->check()) throw new AuthenticationException('Es necesario estar identificado para eliminar una tarea');
+        if ( ! auth()->check()) { throw new AuthenticationException('Es necesario estar identificado para eliminar una tarea'); }
 
         /** @var User $usuario */
         $usuario = auth()->user();
 
         /** @var Tarea $tarea */
         $tarea = Tarea::where('id', intval($args['id']) )->first();
-        if ( ! $tarea ) throw new ParseException('No se ha encontrado la tarea que se pretende eliminar');
+        if ( ! $tarea ) { throw new ParseException('No se ha encontrado la tarea que se pretende eliminar'); }
 
         // Autorización
-        if ( $usuario->cant('destroy', $tarea )) throw new AuthorizationException('No tiene permisos para eliminar la tarea');
+        if ( $usuario->cant('destroy', $tarea )) { throw new AuthorizationException('No tiene permisos para eliminar la tarea'); }
 
         $tarea->delete();
         return true;

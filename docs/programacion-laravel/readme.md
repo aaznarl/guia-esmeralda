@@ -201,6 +201,11 @@ class Objetivo extends Model
         'conseguido_at' => 'datetime'
     ];
 
+    /**
+     * Siempre que se carguen Objetivos, cargar también sus PuntoDeControl de forma "ansiosa" (eager load)
+     */
+    protected $with = ['puntosControl'];
+
     public const MAX_LONG_NOMBRE = 80;
     public const MAX_LONG_DESCRIPCION = 500;
     
