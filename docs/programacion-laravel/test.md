@@ -5,6 +5,105 @@ Referencias básicas:
 - [The perfect unit test](https://javascriptplayground.com/the-perfect-javascript-unit-test/)
 
 
+## Ejemplo: Tests de funcionamiento básico de la aplicación
+
+Ejemplo de tests de tipo _Feature_:
+
+```php
+<?php
+namespace Tests\Feature;
+
+use Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use App\Models\User;
+use App;
+
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Notification;
+use Artisan;
+
+class NavegacionBasicaTest extends TestCase
+{
+    use RefreshDatabase;
+
+    /** @var User */
+    protected $usuario;
+
+    public function setUp()
+    {
+        parent::setUp();
+        
+        // Shows errors/stacktraces from your app in phpunit, without rendering a "shoops page"
+        $this->withoutExceptionHandling();
+
+        Artisan::call( 'db:seed', ['--class' => 'RolesSeeder', '--force' => true ]);
+
+        // Crear el usuario para acceder a todas las páginas que requieren autenticación
+        $this->usuario = factory( User::class )->create();
+    }
+
+
+    /**
+     * Verificar que la connection es "sqlite-testing"
+     */
+    public function testEntornoyBD()
+    {
+        self::assertEquals( 'testing', App::environment());
+    }
+
+    public function testPaginaPrincipal()
+    {
+        $this->from('/url-de-origen-desde-la-que-se-accede');  // para que funcione por ejemplo: return back();
+        $response = $this->actingAs( $this->usuario )->get( route('home') );
+
+        $response
+            ->assertSuccessful()
+            ->assertSeeText('Mis Contactos');
+    }
+
+    /**
+     * Verificar que al llamar a la ruta que envía un email de prueba, se envía.
+     * Documentación de Fake Mail: https://laravel.com/docs/5.5/mocking#mail-fake
+     */
+    function testEnvioEmailDePrueba()
+    {
+        Mail::fake();
+
+        $response = $this->actingAs( $this->usuario )->get(route('pruebas.email') );
+
+        Mail::assertSent( App\Mail\PruebaMail::class );
+        $response
+            ->assertSuccessful()
+            ->assertSeeText('Email de prueba enviado correctamente');
+    }
+
+    /**
+     * Este test verifica que cuando se produce una excepción, se crea una notificación a los usuarios que tienen
+     * el rol "Receptor de errores"
+     *
+     * @link https://laravel.com/docs/5.5/mocking#notification-fake
+     */
+    function testAlProducirUnErrorDeServidorSeNotifica()
+    {
+        Mail::fake();
+        Notification::fake();
+
+        $this->usuario->asignarRol( 'Receptor de errores' );
+
+        $response = $this->actingAs( $this->usuario )->get(route('pruebas.error'));
+
+        Notification::assertSentTo( $this->usuario,  App\Notifications\ErrorServidorNotification::class );
+
+        $response
+            ->assertStatus( 500 )
+            ->assertSeeText('Está cascando porque así lo has pedido');
+    }
+
+
+}
+```
+
+
 ## Ejemplo: Test de llamada a GraphQL
 
 Ejemplo de como implementar un test que llama al motor de GraphQL para verificar
@@ -42,7 +141,7 @@ class ModelCuentaTest extends TestCase
         $cuenta = $banco->cuentas()->save( $cuenta );   // Hay que hacer esto para exista $cuenta->id
         $id = $cuenta->id;
         $usuario->asignarRol(TipoRol::ID_TITULAR_CUENTA, $cuenta);
-        $cuenta = Cuenta::find( $id );          // La cargo desde BD porque así se rellenan los valores por defecto
+        $cuenta->refresh();       // Cargar desde BD porque así se rellenan los valores por defecto
         
         $asiento = $cuenta->asientos()->save( factory( Asiento::class )->make() );
 
