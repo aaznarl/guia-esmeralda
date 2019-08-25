@@ -7,6 +7,9 @@ Tabla de contenidos:
 En profundidad:
 
 - [GraphQL en Laravel](graphql.md)
+- [Autorización](autorizacion.md)
+- [Test](test.md)
+- [Instalar paquetes buenos de Laravel](paquetes-buenos.md)
 
 
 ## Referencias básicas de Laravel

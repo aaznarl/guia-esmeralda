@@ -36,6 +36,8 @@ module.exports =
                 collapsable: true,
                 children: [
                     'instalacion-entorno-desarrollo/',
+                    'instalacion-entorno-desarrollo/entorno-desarrollo-docker.md',
+                    'instalacion-entorno-desarrollo/entorno-desarrollo-homestead.md',
                 ]
             },
             {
@@ -46,6 +48,7 @@ module.exports =
                     'programacion-laravel/autorizacion.md',
                     'programacion-laravel/graphql.md',
                     'programacion-laravel/test.md',
+                    'programacion-laravel/paquetes-buenos.md'
                 ]
             },
             {

@@ -1,6 +1,7 @@
 # Funcionamiento de esta guía
 
-Esta guía está construida con la librería [Vuepress](https://vuepress.vuejs.org/) 
+Esta guía está construida con la librería [Vuepress](https://vuepress.vuejs.org/). 
+El código fuente se encuentra en github: [aaznarl/guia-esmeralda](https://github.com/aaznarl/guia-esmeralda)
 
 
 Para trabajar en desarrollo, desde la **raíz del proyecto**, ejecutar:
