@@ -54,8 +54,9 @@ Como referencia básica, la propia documentación: [https://laradock.io/](https:
 10. Arrancar todos los contenedores:
     ```bash
     cd laradock
-    docker-compose up -d nginx postgres pgadmin redis workspace sonarqube
-    docker-compose ps     # para revisar la situación
+    docker-compose build nginx redis workspace    # Construir los contenedores para que cojan la configuración
+    docker-compose up -d nginx redis workspace    # levantar las máquinas
+    docker-compose ps                             # para revisar la situación
     ```    
 11. Ajustar la configuración de redis en el fichero **.env**:
     ```
@@ -81,6 +82,10 @@ docker-compose up -d postgres          # Levantar los contenedores asociados al 
 docker-compose stop                    # Close all running Containers
 docker-compose stop postgres           # stop single container
 docker-compose down                    # delete all existing Containers
+
+# Lo suyo es levantar todos de golpe:
+docker-compose up -d nginx redis workspace postgres pgadmin sonarqube   # con PostgreSQL
+docker-compose up -d nginx redis workspace mssql sonarqube              # con SQL Server
 
 # Para ver los logs de un servicio (ej: postgres):
 docker-compose logs postgres
@@ -126,7 +131,13 @@ Otras referencias:
 
 ## Configurar PostgreSQL
 
-Hay algún último detalle que hay que tener en cuenta para afinar postgres:
+Se pueden incorporar 2 nuevos contenedores:
+
+- **postgres**: es el servidor de base de datos PostgreSQL
+- **pgadmin**: es la herramienta web pgAdmin, una interfaz para acceder
+  al servidor, crear y manipular bases de datos, hacer consultas, etc.  
+
+Los pasos son:
 
 1. Ajustar la configuración de postgres para que funcione (el volumen docker) en el fichero **docker-compose.yml**:
     ```yaml
@@ -144,6 +155,10 @@ Hay algún último detalle que hay que tener en cuenta para afinar postgres:
             - pgdata:/var/lib/postgresql/data     # Esta es la línea que hay que añadir
             - ${POSTGRES_ENTRYPOINT_INITDB}:/docker-entrypoint-initdb.d 
     ```
+2. Reconstruir los contenedores para que coja la nueva configuración:
+   ```
+   docker-compose build postgres pgadmin
+   ```    
 2. Ajustar la configuración en el fichero **.env**:
     ```
     DB_CONNECTION=pgsql
@@ -220,30 +235,47 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
 3. En el fichero de configuración "_laradock/.env_" hay que activar las opciones de Microsoft SQLServer (MSSQL):
    ```
    ### WORKSPACE #############################################
-   WORKSPACE_INSTALL_MSSQL=false
+   WORKSPACE_INSTALL_MSSQL=true
    
    ### PHP_FPM ###############################################
-   PHP_FPM_INSTALL_MSSQL=false
+   PHP_FPM_INSTALL_MSSQL=true
    
     ### MSSQL #################################################
     MSSQL_DATABASE=homestead
     MSSQL_PASSWORD=Secret-2-Secret
     MSSQL_PORT=1433
    ```
-4. Levantar el servidor para ver si funciona:
+4. Definir que se utilice PHP v7.2, dado que el contenedor con la versión 7.3 por 
+   ahora no viene con el driver para conectarse al SQL Server.
+   En el mismo fichero "_laradock/.env_":
+   ```
+   ### PHP Version ###########################################
+   
+   # Select a PHP version of the Workspace and PHP-FPM containers (Does not apply to HHVM). Accepted values: 7.3 - 7.2 - 7.1 - 7.0 - 5.6
+   PHP_VERSION=7.2
+   ```    
+5. Levantar el servidor para ver si funciona:
     ```bash
     cd laradock
-    docker-compose up -d nginx redis workspace mssql
-    docker-compose ps        # para verificar que todos están levantados
+    docker-compose build nginx redis workspace mssql   # Reconstruir los contenedores con la nueva configuración
+    docker-compose up -d nginx redis workspace mssql   # Levantar las máquinas
+    docker-compose ps                                  # Verificar que están levantadas
     ```
-5. Verificar desde el PC que conectamos a la base de datos. Para ello, abrir el _Microsoft Management Studio_
+6. Verificar desde el PC que conectamos a la base de datos. Para ello, abrir el _Microsoft Management Studio_
    en el PC, y realizar esta conexión:
    ![Imagen conexión a BD del SqlServer](./imagenes/conexion-bd-mssql.png)
      * Server name: 127.0.0.1
      * Authentication: SQL Server Authentication
      * Login: sa
      * Password: Secret-2-Secret
-6. Ajustar configuración del fichero "_.env_":
+7. Crear la base de datos, ya sea con el propio _Microsoft Management Studio_
+   o de cualquier otra forma.
+   El nombre no importa, pero ha de ser el mismo que se defina en el 
+   fichero _.env_ de la aplicación.
+   ```
+   CREATE DATABASE homestead
+   ```
+8. Ajustar configuración del fichero "_.env_" en tu proyecto Laravel:
     ```
     DB_CONNECTION=sqlsrv
     DB_HOST=mssql
@@ -253,7 +285,7 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
     DB_USERNAME=sa
     DB_PASSWORD=Secret-2-Secret
     ```
-7. Lanzar las migrations:
+9. Lanzar las migrations:
     ```bash
     cd laradock
     docker-compose exec workspace bash
