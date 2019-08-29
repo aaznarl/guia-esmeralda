@@ -181,8 +181,8 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
     ```    
 2. Open your browser and visit the localhost on port 5050: [http://localhost:5050](http://localhost:5050)
 3. At login page use default credentials:
-    - Username: pgadmin4@pgadmin.org
-    - Password: admin
+    - Username: **pgadmin4@pgadmin.org**
+    - Password: **admin**
 4. Para conectar, crear nueva base de datos con estos parámetros: 
     - Host name/Address: postgres
     - Port: 5432

@@ -48,7 +48,7 @@ module.exports =
                     'programacion-laravel/autorizacion.md',
                     'programacion-laravel/graphql.md',
                     'programacion-laravel/test.md',
-                    'programacion-laravel/paquetes-buenos.md'
+                    'programacion-laravel/paquete-twill.md'
                 ]
             },
             {
