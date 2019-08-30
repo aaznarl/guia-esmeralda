@@ -7,7 +7,7 @@ para todos los posibles contenedores.
 
 
 
-## Instalacr Docker en el PC
+## Instalar Docker en el PC
 
 Como referencia básica, la propia documentación: [https://laradock.io/](https://laradock.io/):
 
