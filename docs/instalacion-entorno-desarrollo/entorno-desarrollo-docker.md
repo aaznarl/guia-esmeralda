@@ -7,7 +7,7 @@ para todos los posibles contenedores.
 
 
 
-## Instalación inicial
+## Instalacr Docker en el PC
 
 Como referencia básica, la propia documentación: [https://laradock.io/](https://laradock.io/):
 
@@ -22,58 +22,103 @@ Como referencia básica, la propia documentación: [https://laradock.io/](https:
    el proyecto:
    ![Imagen opción Shared Drives](./imagenes/docker_settings_shared_drives.png)   
 4. Añadir tu cuenta de usuario en el grupo local del ordenador "_Docker users_"
-5. Añadir _Laradock_ a tu proyecto. Estando en la raiz del mismo, hay el paquete de laradock como un submódulo git:
+
+
+## Incorporar Docker al proyecto Laravel
+
+Para incorporar y configurar los contenedores de docker a tu proyecto existente,
+nos vamos a basar en las plantillas que vienen definidas en
+[laradock](https://laradock.io/).
+
+5. Toda la configuración de docker del proyecto la vamos a guardar en una nueva
+   carpeta "_docker_":
+   ```bash
+   mkdir docker
+   ```
+6. Añadir _Laradock_ a tu proyecto. Estando en la raiz del mismo, 
+   hay que añadir el paquete como un submódulo git:
    ```bash
    # Crear el fichero ".gitmodules" y 
    # descarga en la carpeta "laradock" el paquete completo de github
-   git submodule add https://github.com/laradock/laradock.git
+   git submodule add https://github.com/laradock/laradock.git docker/laradock/
+   
+   git submodule init     # descarga el código fuente
+   git submodule update   # para revisar si hay actualizaciones, ejecutar de vez en cuando
    ```
    ::: tip
    Sólo hacer este paso si laradock todavía no ha sido incluido en tu proyecto antes.
    :::
-6. Copiar el fichero "_laradock/env-example_" en el fichero "_laradock/.env_"
-   (salvo que el proyecto ya tenga un fichero plantilla en "_.env-laradock_", por ejemplo), 
-   y vigilar estos parámetros:
+7. Vamos a partir de la configuración de laradock, que ahorra mucho tiempo:
+   ```bash
+   cp docker/laradock/env-example        docker/.env
+   cp docker/laradock/env-example        docker/.env.example
+   cp docker/laradock/docker-compose.yml docker/docker-compose.yml
+   ```
+8. Los futuros logs y el fichero "_.env_" guardaremos la configuración concreta, así que 
+   mejor ignorarla en un nuevo fichero "_docker/.gitignore_":
+   ```bash
+   .env
+   logs
+   ```   
+9. Vigilar este parámetro en el fichero "_docker/.env_":
     ```
     NGINX_HOST_HTTP_PORT=800    # Después la aplicación funcionará en http://localhost:800
     ```
-7. Como hemos puesto la aplicación en el puerto 800, hay que configurarlo en el **.env**:
+10. Dado que vamos a utilizar la configuración que se encuentra en "_docker/docker-compose.yml_",
+    es necesario cambiar todas las rutas de ese fichero para que encuentren los
+    "Dockerfile" de sus contenedores. Por ejemplo, donde pone:
+    ```yaml
+    ### NGINX Server #########################################
+    nginx:
+      build:
+        context: ./nginx
+    ``` 
+    Hay que poner:
+    ```yaml
+    ### NGINX Server #########################################
+        nginx:
+          build:
+            context: ./laradock/nginx    
+    ```
+    Se pueden eliminar los servicios que no se vayan a usar.
+11. Como hemos puesto la aplicación en el puerto 800, hay que configurarlo en el **.env**,
+    y algún otro parámetro:
     ```
     APP_URL=http://localhost:800/
+
+    REDIS_HOST=redis
     ```
-8. También en el fichero **webpack.mix.js**:
+12. También en el fichero **webpack.mix.js**:
     ```js
     mix.browserSync({
         proxy: 'http://localhost:800'
     });
     ```
-9. Ajustar la configuración de Postgres o de Microsoft SQLServer. Para ello, elegir
+13. Ajustar la configuración de Postgres o de Microsoft SQLServer. Para ello, elegir
    cuál de los 2 vas a utilizar y después revisar en su apartado correspondiente más abajo:
      * [Postgres](#configurar-postgresql)
      * [Microsoft SQL Server](#configurar-sql-server)
-10. Arrancar todos los contenedores:
+14. Arrancar todos los contenedores:
     ```bash
-    cd laradock
-    docker-compose build nginx redis workspace    # Construir los contenedores para que cojan la configuración
-    docker-compose up -d nginx redis workspace    # levantar las máquinas
-    docker-compose ps                             # para revisar la situación
+    cd docker
+    docker-compose build nginx redis workspace php-fpm  # Construir los contenedores para que cojan la configuración
+    docker-compose up -d nginx redis workspace          # levantar las máquinas
+    docker-compose ps                                   # para revisar la situación
     ```    
-11. Ajustar la configuración de redis en el fichero **.env**:
-    ```
-    REDIS_HOST=redis
-    ```
-12. Ejecutar las migrations:
+15. Ejecutar las migrations:
     ```bash
     docker-compose exec workspace bash    # Entrar en el contenedor del workspace
     php artisan migrate --seed
     exit                                  # salir del contenedor
     ```
-13. La aplicación está corriendo en: [http://localhost:800](http://localhost:800)
+16. La aplicación está corriendo en: [http://localhost:800](http://localhost:800)
 
 
 ## Operar con docker
 
-Para revisar la situación:
+Para revisar la situación, hay que situarse en la carpeta "docker" que es
+donde se encuentra el fichero "_docker-compose.yml_" con la configuración
+de los contenedores, y entonces:
 
 ```bash
 docker ps                              # List current running Containers
@@ -91,7 +136,7 @@ docker-compose up -d nginx redis workspace mssql sonarqube              # con SQ
 docker-compose logs postgres
 
 # Para entrar en un container (run commands in a running Container)
-docker-compose exec {container-name} bash
+docker-compose exec nginx bash
 exit                                   # exit from a container
 ```
 
@@ -99,9 +144,9 @@ Para cambiar la configuración de los contenedores:
 
 - Edit default container configuration: Open the ```docker-compose.yml``` and change anything you want.
 - Edit a Docker Image: 
-  - example for mysql it will be _mysql/Dockerfile_.
+  - example for postgres it will be _postgres/Dockerfile_.
   - Edit the file the way you want.
-  - Re-build the container: ```docker-compose build mysql```
+  - Re-build the container: ```docker-compose build postgres```
 
 Run Artisan Commands: hay que hacerlo desde el container _workspace_:
 
@@ -175,11 +220,12 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
 
 1. Arranca los contenedores:
     ```bash
-    cd laradock
+    cd docker
     docker-compose up -d postgres pgadmin
     docker-compose ps     # para revisar la situación
     ```    
-2. Open your browser and visit the localhost on port 5050: [http://localhost:5050](http://localhost:5050)
+2. Open your browser and visit the localhost on port 5050: 
+   [http://localhost:5050](http://localhost:5050)
 3. At login page use default credentials:
     - Username: **pgadmin4@pgadmin.org**
     - Password: **admin**
@@ -199,24 +245,12 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
 
 1. El Dockerfile de laradock, no termina de funcionar.
    Por esa razón, la idea es utilizar el [repositorio oficial de Microsoft de recursos Docker para SQL Server](https://github.com/Microsoft/mssql-docker),
-   por lo que creamos un fichero en el proyecto "_docker/mssql/Dockerfile_" con este contenido:
-    ```
-    # Exmple of creating a container image that will run as a user 'mssql' instead of root
-    # This is example is based on the official image from Microsoft and effectively just changes the user that SQL Server runs as
-    
-    FROM microsoft/mssql-server-linux:latest
-    
-    RUN mkdir /var/opt/mssql && \
-        useradd -d /var/opt/mssql -c "Microsoft SQL Server user" mssql && \
-        chown mssql:mssql /var/opt/mssql -R
-    
-    USER mssql
-    
-    ENV HOME=/var/opt/mssql \
-        APP_HOME=/var/opt/mssql
-    
-    CMD ["/opt/mssql/bin/sqlservr"]
-    ```   
+   para lo cual hay que añadirlo como submodulo git:
+   ```bash
+   git submodule add https://github.com/microsoft/mssql-docker.git docker/mssql-docker/
+   git submodule init
+   git submodule update
+   ```
 2. En el fichero "_laradock/docker-compose.yml_", realizamos algún ajuste 
    (el contenido que no no se muestra es porque no cambia):
     ```yaml
@@ -224,7 +258,7 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
         mssql:
           build:
             #context: ./mssql            # Dejar de usar el Dockerfile de laradock
-            context: ../docker/mssql     # Usar el Dockerfile del punto 1
+            context: ./mssql-docker/linux/preview/examples/mssql-server-linux-non-root
           volumes:
             #- ${DATA_PATH_HOST}/mssql:/var/opt/mssql     # Esto no funciona
             - mssql:/var/opt/mssql                        # Añadir esta línea
@@ -232,7 +266,7 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
             - frontend                    # Añadimos esta red para poder conectarnos desde el PC
             - backend
     ```
-3. En el fichero de configuración "_laradock/.env_" hay que activar las opciones de Microsoft SQLServer (MSSQL):
+3. En el fichero de configuración "_docker/.env_" hay que activar las opciones de Microsoft SQLServer (MSSQL):
    ```
    ### WORKSPACE #############################################
    WORKSPACE_INSTALL_MSSQL=true
@@ -247,7 +281,7 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
    ```
 4. Definir que se utilice PHP v7.2, dado que el contenedor con la versión 7.3 por 
    ahora no viene con el driver para conectarse al SQL Server.
-   En el mismo fichero "_laradock/.env_":
+   En el mismo fichero "_docker/.env_":
    ```
    ### PHP Version ###########################################
    
@@ -256,10 +290,10 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
    ```    
 5. Levantar el servidor para ver si funciona:
     ```bash
-    cd laradock
-    docker-compose build nginx redis workspace mssql   # Reconstruir los contenedores con la nueva configuración
-    docker-compose up -d nginx redis workspace mssql   # Levantar las máquinas
-    docker-compose ps                                  # Verificar que están levantadas
+    cd docker
+    docker-compose build nginx redis workspace mssql php-fpm # Reconstruir los contenedores con la nueva configuración
+    docker-compose up -d nginx redis workspace mssql         # Levantar las máquinas
+    docker-compose ps                                        # Verificar que están levantadas
     ```
 6. Verificar desde el PC que conectamos a la base de datos. Para ello, abrir el _Microsoft Management Studio_
    en el PC, y realizar esta conexión:
@@ -287,9 +321,10 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
     ```
 9. Lanzar las migrations:
     ```bash
-    cd laradock
-    docker-compose exec workspace bash
+    cd docker
+    docker-compose exec workspace bash   # Entrar en el contenedor workspace
     php artisan migrate --seed
+    exit                                 # Salir del contenedor
     ```
 
 
@@ -316,7 +351,7 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
      bash init_sonarqube_db.sh
      exit                                    # Salir del contenedor
      ```
-     Ese fichero se encuentra en el proyecto, en _laradock/postgres/docker-entrypoint-initdb.d/init_sonarqube_db.sh_. 
+     Ese fichero se encuentra en el proyecto, en _docker/laradock/postgres/docker-entrypoint-initdb.d/init_sonarqube_db.sh_. 
      Si da algún problema en Windows del tipo _End of file_, sólo hay que editarlo con el IDE y añadirle un salto
      de línea al final.
 2. Para ejecutar un análisis de Sonarqube, instalar el [scanner](https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/) en tu PC de desarrollo,
