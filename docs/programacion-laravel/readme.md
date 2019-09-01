@@ -96,7 +96,7 @@ class CrearTablaEscenarios extends Migration
 
             $table->string('nombre');
             $table->string('descripcion')->nullable();
-            $table->boolean('activo')->default(true);
+            $table->boolean('activo')->default(true);    // En general, no crear booleans. Mejor fechas: "activo_at"
 
             $table->integer('user_id')->unsigned();
             $table->foreign('user_id')

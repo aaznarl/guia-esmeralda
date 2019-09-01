@@ -164,24 +164,14 @@ Y se creará:
 4. [a controller](#_4-controller-creado-con-twill)
 5. [a form request object](#_5-form-request-creado-con-twill) 
 6. [a form view](#_6-form-view-creado-con-twill)
-7. Añadir la ruta a **routes/admin.php**:
-   ```php
-   Route::module('gallifantes');
-   ```
-8. Añadir una opción de menú en el menú del CMS, en el fichero **config/twill-navigation.php**:
-   ```php
-   'gallifantes' => [
-       'title' => 'Gallifantes',
-       'module' => true
-   ]
-   ``` 
-9. Migrar la base de datos:
-   ```bash
-   php artisan migrate
-   ```
-10. [Añadir el módulo al panel principal (dashboard) de Twill](#_10-anadir-el-modulo-al-panel-principal-dashboard-de-twill)
+7. [personalizar el formulario "Add new"](#_7-personalizar-el-formulario-add-new)
+8. [Añadir el módulo al panel principal (dashboard)](#_8-anadir-el-modulo-al-panel-principal-dashboard) 
+9. [add route](#_9-anadir-la-ruta-al-fichero-routes)
+10. [Añadir una opción de menú en el menú del CMS](#_10-anadir-una-opcion-de-menu-en-el-menu-del-cms)
+11. [Migrar la base de datos](#_11-migrar-la-base-de-datos)
 
-Ahora hay que detallar cada uno de los pasos:
+A continuación se detallan cada uno de los pasos:
+
 
 ## 1. Migration creada con Twill
 
@@ -191,7 +181,7 @@ Es una migration normal, hay que añadir los campos que faltan, y adaptarla a tu
 Si utilizas un modelo existente de antes, es necesario asegurarse de que tiene un campo **published**:
 
 ```php
-   $table->boolean('published')->default(false);
+   $table->boolean('published')->default(true);
 ```
 
 Ejemplo creado: **database/migrations/2019_08_29_193817_create_gallifantes_tables.php**
@@ -344,6 +334,10 @@ Sirve para gestionar:
 - after save actions (like attaching a relationship)
 - hydrating the model for preview of revisions
 
+El nombre de la clase es importante. Twill lo "singulariza" y le añade "Repository", por lo que si
+por ejemplo el módulo Twill se llamara "TiposProductos" entonces la clase del
+repositorio debería ser **TiposProductoRepository**.
+
 Ejemplo creado: **app/Repositories/GallifanteRepository.php**
   
 ```php
@@ -372,6 +366,10 @@ Se definen cómo aparecen todas las columnas, los filtros, opciones de búsqueda
 si se muestran los botones de "eliminar", "reordenar", "crear", "editar", si la edición se hace
 en un dialog modal, y muchas más opciones.
 
+El nombre de la clase es importante. Twill lo "singulariza" y le añade "Controller", por lo que si
+por ejemplo el módulo Twill se llamara "TiposProductos" entonces la clase del
+controller debería ser **TiposProductoController**.
+
 Ejemplo creado: **app/Http/Controllers/Admin/GallifanteController.php**
 
 ```php
@@ -399,6 +397,49 @@ class GallifanteController extends ModuleController
     * Specify the default listing order
     */ 
     protected $defaultOrders = ['nombre' => 'asc'];
+    
+    /*
+     * Relations to eager load for the form view
+     * Add relationship used in multiselect and resource form fields
+     */
+    protected $formWith = [
+        'tipo'                  // relación One to Many, contra TipoGallifante, mediante columna tipoGallifante_id
+    ];
+
+    /*
+     * Add anything you would like to have available in your module's form view
+     * For example, relationship lists for multiselect form fields
+     */
+    protected function formData($request)
+    {
+        return [
+            'listaTiposGallifantes' => TipoGallifante::all()
+                ->map( function($item,$key) { return ['value' => $item->id, 'label' => $item->nombre]; } )
+                ->toArray()
+        ];
+    }    
+    
+    /*
+     * Available columns of the index view
+     */
+    protected $indexColumns = [
+        'nombre' => [ // field column
+            'title' => 'Nombre',
+            'field' => 'nombre',
+            'sort' => true, // column is sortable
+        ],
+        'tipo' => [ // Nombre de la relación:  $gallifante->tipo
+            'title' => 'Tipo gallifante',
+            'sort' => true,
+            'relationship' => 'tipo',    // nombre de la relación
+            'field' => 'nombre'          // Field del model "TipoGallifante" que se quiere mostrar
+        ],
+        'obsoleto' => [
+            'title' => 'Obsoleto',
+            'field' => 'obsoleto',
+            'sort' => true // column is sortable
+        ]
+    ];      
 }
 ```
 
@@ -406,6 +447,10 @@ class GallifanteController extends ModuleController
 
 Se pueden añadir reglas de validación. Si este fichero no existe no pasa nada.
 [Documentación oficial Form Requests](https://twill.io/docs/#form-requests)
+
+El nombre de la clase es importante. Twill lo "singulariza" y le añade "Request", por lo que si
+por ejemplo el módulo Twill se llamara "TiposProductos" entonces la clase del
+controller debería ser **TiposProductoRequest**.
 
 Ejemplo creado: **app/Http/Requests/Admin/GallifanteRequest.php**
 
@@ -455,15 +500,26 @@ Ejemplo creado: **resources/views/admin/gallifantes/form.blade.php**
 @extends('twill::layouts.form')
 
 @section('contentFields')
-    
+       
     @formField('input', [
-        'name' => 'subtitulo',
-        'label' => 'Subtítulo',
-        'maxlength' => 100,
-        'required' => true,
-        'note' => 'Hint message goes here',
-        'placeholder' => 'Placeholder goes here',
+        'name' => 'nombre',
+        'label' => 'Nombre',
+        'maxlength' => \App\Models\Gallifante::MAX_LONG_NOMBRE,
+        'note' => 'No olvide poner el color del gallifante',
+        'required' => true
     ])
+    
+    @formField('checkbox', [
+        'name' => 'obsoleto',
+        'label' => 'Obsoleto'
+    ])
+
+    @formField('select', [
+        'name' => "tipoGallifante_id",
+        'label' => "Tipo de gallifante",
+        'native' => true,
+        'options' => $listaTiposGallifantes
+    ])       
     
     @formField('input', [
         'translated' => true,
@@ -478,9 +534,70 @@ Ejemplo creado: **resources/views/admin/gallifantes/form.blade.php**
 @stop
 ``` 
 
+## 7. Personalizar el formulario "Add new"
+
+La idea es que al crear de alta un modelo, sólo se muestren los campos obligatorios que además
+no tienen un valor por defecto. Una vez creado, ya se podrían editar todos los campos en el otro formulario
+completo.
+
+[Referencia en la web de Twill](https://spectrum.chat/twill/help/is-it-possible-to-add-fields-to-the-add-new-module-modal~77da408f-ade6-4f88-aa59-797c80fd9e93)
+
+Twill define por defecto un formulario para dar de alta un nuevo objeto del modelo, que únicamente
+tiene el campo principal. **Si quieres personalizar ese formulario con más campos**, hay que copiar
+el contenido del fichero del propio paquete de Twill:
+
+```
+vendor/area17/twill/src/views/partials/create.blade.php
+```
+
+en un nuevo fichero en tu proyecto:
+
+```
+resources/views/admin/gallifantes/create.blade.php
+```
+
+Ejemplo: añadir el campo "alias":
+
+```php
+@formField('input', 
+[
+    'name' => $titleFormKey ?? 'title',
+    'label' => ucfirst($titleFormKey ?? 'title'),
+    'translated' => $translateTitle ?? false,
+    'required' => true,
+    'onChange' => 'formatPermalink'
+])
+
+@formField('input',
+[
+    'name' => 'alias',
+    'label' => 'Alias',
+    'required' => true
+])
+
+@formField('select', [
+    'name' => "tipoGallifante_id",
+    'label' => "Tipo de gallifante",
+    'native' => true,
+    'options' => \App\Models\TipoGallifante::all()
+                    ->map( function($item,$key) { return ['value' => $item->id, 'label' => $item->nombre]; } )
+                    ->toArray()
+])
+
+@if ($permalink ?? true)
+    @formField('input', 
+    [
+        'name' => 'slug',
+        'label' => 'Permalink',
+        'translated' => true,
+        'ref' => 'permalink',
+        'prefix' => $permalinkPrefix ?? ''
+    ])
+@endif
+```
 
 
-## 10. Añadir el módulo al panel principal (dashboard) de Twill
+## 8. Añadir el módulo al panel principal (dashboard)
 
 Para que aparezca en el panel principal de Twill, hay que añadirlo a la sección **modules**
 de la configuración de Twill.
@@ -505,3 +622,52 @@ return [
     ]
 ];
 ```
+
+## 9. Añadir la ruta al fichero routes 
+
+En el fichero **routes/admin.php** añadir la línea:
+
+```php
+Route::module('gallifantes');
+```
+
+
+## 10. Añadir una opción de menú en el menú del CMS
+
+En el fichero **config/twill-navigation.php** añadir:
+
+```php
+'gallifantes' => [
+   'title' => 'Gallifantes',
+   'module' => true
+]
+```
+
+## 11. Migrar la base de datos
+
+Ejecutar las migraciones normales del proyecto, para que se cree la tabla donde
+se almacenarán los registros. Ejecutar:
+
+```bash
+php artisan migrate
+```
+
+
+## Solución a problemas habituales
+
+::: danger Al crear o actualizar un modelo 
+Array to string conversion at /var/www/vendor/laravel/framework/src/Illuminate/Support/Str.php:353)
+:::
+
+Se soluciona definiendo el array fillable en el Model:
+
+```php
+class Producto extends Model
+{
+    protected $fillable = ['nombre', 'alias', 'descripcion', 'published'];
+
+```
+
+
+
+

@@ -8,7 +8,7 @@ module.exports =
         anchor: { permalink: true },
         
         // options for markdown-it-toc
-        toc: { includeLevel: [2, 3] },
+        toc: { includeLevel: [2, 3, 4] },
         
         config: md => {
             // use more markdown-it plugins!
@@ -19,6 +19,14 @@ module.exports =
     themeConfig: {
         //logo: '/assets/img/logo.png',
         lastUpdated: 'Actualizado por última vez', // string | boolean
+        serviceWorker: {
+            updatePopup: true // Boolean | Object, default to undefined.
+            // If set to true, the default text config will be: 
+            // updatePopup: { 
+            //    message: "New content is available.", 
+            //    buttonText: "Refresh" 
+            // }
+        },
         nav: [
             { text: 'Home', link: '/' },
             { text: 'Google', link: 'https://google.com' },
