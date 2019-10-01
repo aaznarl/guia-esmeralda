@@ -553,6 +553,164 @@ public function registrarErrorEnCliente($parent, array $args, $context, $info)
 ```
 
 
+## Guardar en LocalStorage
+
+Supongamos que tenemos una lista de escenarios, que se cargan con Apollo, y queremos que el navegador
+recuerde cuáles eran los escenarios que el usuario tenía seleccionados la última vez.
+
+Primero hay que hacer que al cargar la página, se carguen los escenarios almacenados en LocalStorage:
+
+```js
+data () {
+    return {
+        LS_ESCENARIOS_SELECCIONADOS: "Lares2.arrayEscenariosSeleccionados",
+        escenarios: [],
+    }
+},
+apollo: {
+  misEscenarios: function() {
+    return {
+      query: GET_misEscenarios,
+        result(ApolloQueryResult)
+        {
+          if ( ApolloQueryResult.data ) {
+            this.escenarios = this.seleccionarEscenariosSegunLocalStorage( ApolloQueryResult.data.misEscenarios );
+          }
+}}}},
+methods: {  
+    /**
+     * En el LocalStorage se guarda algo así:  
+     *     ["1", "4"]     
+     * Estarían seleccionados los escenarios con ID 1 y 4
+     */
+    seleccionarEscenariosSegunLocalStorage: function ( escenarios )
+    {
+        let lsEscenariosSeleccionados = (typeof(Storage) === "undefined"  || ! Array.isArray(escenarios) )
+            ? "[]"
+            : localStorage.getItem( this.LS_ESCENARIOS_SELECCIONADOS );
+        let arrayEscenariosSeleccionados = (lsEscenariosSeleccionados === null)
+            ? []
+            : JSON.parse( lsEscenariosSeleccionados );
+        let escenariosADevolver = [];
+
+        for (let i = 0; i < escenarios.length; i++)
+        {
+            let estabaSeleccionado = (arrayEscenariosSeleccionados.indexOf(escenarios[i].id) !== -1);
+            let escenarioQueToca = {
+                id: escenarios[i].id,
+                nombre: escenarios[i].nombre,
+                descripcion: escenarios[i].descripcion,
+                seleccionado: estabaSeleccionado
+            };
+            escenariosADevolver.push( escenarioQueToca );
+        }
+
+        return escenariosADevolver;
+    }
+}
+```
+
+En segundo lugar, cada vez que el usuario haga click sobre un escenario, hay que guardar esa decisión
+en el LocalStorage. Supongamos que utilizamos otro componente ListaEscenarios sólo para renderizar los
+escenarios en la pantalla, pero que no tiene nada de lógica: 
+
+```html
+<ListaEscenarios
+        v-bind:escenarios="escenarios"
+        class="ml-2"
+        v-on:change="cambiarEstadoEscenarioYGuardarEnLocalStorage"
+></ListaEscenarios>
+
+```
+
+Nuestro componente debería definir esa función **cambiarEstadoEscenarioYGuardarEnLocalStorage**:
+
+```js
+methods: {  
+    cambiarEstadoEscenarioYGuardarEnLocalStorage( objCambio )
+    {
+        this.cambiarEstadoEscenario( objCambio );
+        this.actualizarEstadoEscenarioEnLocalStorage( objCambio.idEscenario, objCambio.nuevoValor );
+    },
+    
+    /**
+     * Se pone o se quita el escenario como "seleccionado", en this.escenarios
+     * 
+     * El objeto que se le pasa como cambio tiene esta pinta:
+     *    {
+     *        idEscenario: 3,
+     *        nuevoValor: true
+     *    }
+     * @param objCambio
+     */
+    cambiarEstadoEscenario: function ( objCambio )
+    {
+        if ( ! this.escenarios ) return;
+        let i = this.escenarios.findIndex( escenario => escenario.id === objCambio.idEscenario );             
+
+        // Quizás ya tiene el valor que habría que ponerle, por lo que no hay que hacer nada:
+        if ( Boolean( this.escenarios[i].seleccionado) === objCambio.nuevoValor ) return;
+        
+        // Procedemos a realizar el cambio
+        let nuevoEscenario = {
+            id: this.escenarios[i].id,
+            nombre: this.escenarios[i].nombre,
+            descripcion: this.escenarios[i].descripcion,
+            seleccionado: objCambio.nuevoValor
+        };
+        Vue.set( this.escenarios, i, nuevoEscenario );
+    },
+    
+    /**
+     * @param idEscenario            // id del escenario
+     * @param seleccionado           // boolean. Es true si hay que guardarlo seleccionado, es decir, que aparezca en el array
+     */        
+    actualizarEstadoEscenarioEnLocalStorage: function( idEscenario, seleccionado )
+    {            
+        if (typeof(Storage) === "undefined") { return; }
+
+        let lsEscenariosSeleccionados = localStorage.getItem( this.LS_ESCENARIOS_SELECCIONADOS );
+        let arrayEscenariosSeleccionados = (lsEscenariosSeleccionados === null)
+            ? []
+            : JSON.parse( lsEscenariosSeleccionados );
+        
+        if ( ! Array.isArray( arrayEscenariosSeleccionados )) { arrayEscenariosSeleccionados = []; } 
+        let estabaSeleccionado = arrayEscenariosSeleccionados.indexOf(idEscenario) !== -1;
+        
+        if ( estabaSeleccionado  && !seleccionado ) {
+            // Hay que sacarlo, dado que se ha quitado
+            arrayEscenariosSeleccionados = arrayEscenariosSeleccionados.filter( (id) => id !== idEscenario );
+            this.guardarEnLocalStorage( this.LS_ESCENARIOS_SELECCIONADOS, arrayEscenariosSeleccionados );
+        }
+        else if ( !estabaSeleccionado && seleccionado ) {
+            arrayEscenariosSeleccionados.push( idEscenario );
+            this.guardarEnLocalStorage( this.LS_ESCENARIOS_SELECCIONADOS, arrayEscenariosSeleccionados );
+        }            
+    },
+    
+    /**
+     * Guardar en LocalStorage, si es que está disponible y el valor no es null
+     * @param key
+     * @param valor
+     */
+    guardarEnLocalStorage: function( key, valor )
+    {
+        if (typeof(Storage) === "undefined") { return; }
+
+        if ( ! valor )
+        {
+            localStorage.removeItem( key );
+            return;
+        }
+
+        let stringValor = typeof valor === 'string' ? valor : JSON.stringify( valor ); 
+        localStorage.setItem( key, stringValor );
+    }
+    
+}
+```
+
+
 
 
 

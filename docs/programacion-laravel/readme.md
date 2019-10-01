@@ -350,7 +350,7 @@ class RolesSeeder extends Seeder
 ```
 
 
-### Ejemplo seeder de datos falsos
+### Ejemplo simple seeder de datos falsos
 
 ```php
 <?php
@@ -381,6 +381,68 @@ class ObjetivosSeeder extends Seeder
             );
         });
         
+    }
+}
+```
+
+### Ejemplo completo seeder de datos falsos
+
+En este caso supongamos que tenemos estos 3 modelos:
+
+- Cuentas
+- Asientos 
+- Etiquetas
+
+Con estas relaciones:
+
+- Relación 1 a N: **Cuenta->asientos**   (una cuenta tiene N asientos, y un asiento pertenece sólo a una cuenta)
+- Relación 1 a N: **Cuenta->etiquetas**  (una cuenta tiene definidas etiquetas, cada etiqueta pertenece sólo a un asiento)
+- Relación N a N: **Asientos - Etiquetas**  (un asiento puede tener asociadas varias etiquetas, y una etiqueta puede estar asociada a varios asientos)   
+
+El siguiente Seeder crea varias cuentas, a cada cuenta le añade asientos y etiquetas, y por último asocia aleatoriamente a cada asiento, una ó dos etiquetas:
+
+```php
+class CuentaSeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     *
+     * @return void
+     */
+    public function run()
+    {
+        if (app()->environment() == 'production') return;  // Protección
+        
+        User::all()->each( function( User $usuario)
+        {
+            // Relación 1 a N: a cada usuario le añade varias cuentas (entre 1 y 2)
+            $usuario->cuentas()->saveMany(     
+                factory( Cuenta::class, rand(1, 2) )->make()
+            );
+            
+            $usuario->cuentas->each( function (Cuenta $cuenta)
+            {
+                /** @var Collection $etiquetas */       // Creamos varias etiquetas  (relación 1 a N)
+                $etiquetas = $cuenta->etiquetas()->saveMany(
+                    factory( EtiquetaCuenta::class, random_int(2,6) )->make()
+                );
+                
+                /** @var Collection $asientos */        // Le añadimos varios asientos (Relación 1 a N) 
+                $asientos = $cuenta->asientos()->saveMany(
+                    factory( Asiento::class, rand(6, 20) )->make()
+                );
+                
+                // Asociamos cada asiento con etiquetas   (Relación N a N entre Asientos y Etiquetas)
+                $asientos->each( function( Asiento $asiento ) use ($etiquetas)
+                {
+                    $etiquetasAleatorias = $etiquetas
+                        ->random( random_int(1,2) )         // Entre 1 y 2 etiquetas
+                        ->pluck('id')
+                        ->toArray();  
+                    $asiento->etiquetas()->attach( $etiquetasAleatorias );
+                });
+            });
+        });
     }
 }
 ```
