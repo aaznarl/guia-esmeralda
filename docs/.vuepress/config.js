@@ -56,6 +56,7 @@ module.exports =
                     'programacion-laravel/autorizacion.md',
                     'programacion-laravel/graphql.md',
                     'programacion-laravel/test.md',
+                    'programacion-laravel/scout-elasticsearch.md',
                     'programacion-laravel/paquete-twill.md'
                 ]
             },
@@ -70,7 +71,9 @@ module.exports =
                 title: 'Usabilidad',
                 collapsable: true,
                 children: [
-                    'usabilidad/'
+                    'usabilidad/estructura-basica-pagina.md',
+                    'usabilidad/formularios.md',
+                    'usabilidad/tablas.md',
                 ]
             }
             

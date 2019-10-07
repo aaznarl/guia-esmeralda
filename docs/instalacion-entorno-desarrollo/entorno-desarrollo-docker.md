@@ -369,6 +369,34 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
     sonar-scanner
     ```
 
+## ElasticSearch con Docker
+
+No utilizar los DockerFile de Laradock, dado que están desactualizados, y además la versión del contenedor
+de ElasticSearch ha de coincidir con la de Kibana:
+
+```bash
+# Fichero ./docker/elasticsearch/Dockerfile
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+EXPOSE 9200 9300
+
+# Fichero ./docker/kibana/Dockerfile
+FROM docker.elastic.co/kibana/kibana:7.4.0
+EXPOSE 5601
+```
+
+
+Para verificar que el servidor de ElasticSearch está funcionando, le prueba es realizar curl desde el
+contenedor _workspace_:
+
+```bash
+docker-compose up -d workspace elasticsearch kibana
+docker-compose exec workspace bash    # Entrar en el contenedor
+curl -XGET elasticsearch:9200         # Muestra información del servidor, entre otra la versión de ElasticSearch
+exit                                  # Salir del contenedor
+```
+
+
+
 ## Beanstalkd con docker
 
 Pendiente.
