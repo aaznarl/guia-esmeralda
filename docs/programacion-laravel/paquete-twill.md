@@ -13,7 +13,19 @@ aquellos otros datos para los que necesites una administración rápida.
 - [Step by step - Creating a Twill app](https://spectrum.chat/twill/tips-and-tricks/step-by-step-creating-a-twill-app~ac9bd7f7-d1e3-46a8-8e6f-6075d92cdac7)
   - Post de Pablo Barrios 
 
-Siguiendo la [guía de instalación](https://twill.io/docs/#installation). Al ejecutar:
+Siguiendo la [guía de instalación](https://twill.io/docs/#installation), primero
+añadir el paquete *composer* a la aplicación: 
+
+```bash
+composer require area17/twill
+```
+
+::: warning
+Si aparece el error **Fatal error: Allowed memory size of ---- bytes exhausted**
+se debe a que composer puede requerir mucha memoria. 
+::: 
+
+
 
 ```bash
 php artisan twill:install
