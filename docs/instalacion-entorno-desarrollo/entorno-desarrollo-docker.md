@@ -30,12 +30,12 @@ Para incorporar y configurar los contenedores de docker a tu proyecto existente,
 nos vamos a basar en las plantillas que vienen definidas en
 [laradock](https://laradock.io/).
 
-5. Toda la configuración de docker del proyecto la vamos a guardar en una nueva
+1. Toda la configuración de docker del proyecto la vamos a guardar en una nueva
    carpeta "_docker_":
    ```bash
    mkdir docker
    ```
-6. Añadir _Laradock_ a tu proyecto. Estando en la raiz del mismo, 
+2. Añadir _Laradock_ a tu proyecto. Estando en la raiz del mismo, 
    hay que añadir el paquete como un submódulo git:
    ```bash
    # Crear el fichero ".gitmodules" y 
@@ -48,23 +48,23 @@ nos vamos a basar en las plantillas que vienen definidas en
    ::: tip
    Sólo hacer este paso si laradock todavía no ha sido incluido en tu proyecto antes.
    :::
-7. Vamos a partir de la configuración de laradock, que ahorra mucho tiempo:
+3. Vamos a partir de la configuración de laradock, que ahorra mucho tiempo:
    ```bash
    cp docker/laradock/env-example        docker/.env
    cp docker/laradock/env-example        docker/.env.example
    cp docker/laradock/docker-compose.yml docker/docker-compose.yml
    ```
-8. Los futuros logs y el fichero "_.env_" guardaremos la configuración concreta, así que 
+4. Los futuros logs y el fichero "_.env_" guardaremos la configuración concreta, así que 
    mejor ignorarla en un nuevo fichero "_docker/.gitignore_":
    ```bash
    .env
    logs
    ```   
-9. Vigilar este parámetro en el fichero "_docker/.env_":
+5. Vigilar este parámetro en el fichero "_docker/.env_":
     ```
     NGINX_HOST_HTTP_PORT=800    # Después la aplicación funcionará en http://localhost:800
     ```
-10. Dado que vamos a utilizar la configuración que se encuentra en "_docker/docker-compose.yml_",
+6. Dado que vamos a utilizar la configuración que se encuentra en "_docker/docker-compose.yml_",
     es necesario cambiar todas las rutas de ese fichero para que encuentren los
     "Dockerfile" de sus contenedores. Por ejemplo, donde pone:
     ```yaml
@@ -81,37 +81,46 @@ nos vamos a basar en las plantillas que vienen definidas en
             context: ./laradock/nginx    
     ```
     Se pueden eliminar los servicios que no se vayan a usar.
-11. Como hemos puesto la aplicación en el puerto 800, hay que configurarlo en el **.env**,
-    y algún otro parámetro:
+    Vigilar especialmente:
+    ```yaml
+    NGINX_SITES_PATH=./laradock/nginx/sites/      # Completar la ruta con la carpeta "laradock"
+    NGINX_SSL_PATH=./laradock/nginx/ssl/          # lo mismo
+    ```
+7. Ajustar algún parámetro del fichero **docker/.env**, por ejemplo el prefijo de los contenedores:
+   ```
+   COMPOSE_PROJECT_NAME=miproyecto
+   ```    
+8. Como hemos puesto la aplicación en el puerto 800, hay que configurarlo en 
+   la configuración general del proyecto (fichero **.env**), y algún otro parámetro:
     ```
     APP_URL=http://localhost:800/
 
     REDIS_HOST=redis
     ```
-12. También en el fichero **webpack.mix.js**:
+9. También en el fichero **webpack.mix.js**:
     ```js
     mix.browserSync({
         proxy: 'http://localhost:800'
     });
     ```
-13. Ajustar la configuración de Postgres o de Microsoft SQLServer. Para ello, elegir
+10. Ajustar la configuración de Postgres o de Microsoft SQLServer. Para ello, elegir
    cuál de los 2 vas a utilizar y después revisar en su apartado correspondiente más abajo:
      * [Postgres](#configurar-postgresql)
      * [Microsoft SQL Server](#configurar-sql-server)
-14. Arrancar todos los contenedores:
+11. Arrancar todos los contenedores:
     ```bash
     cd docker
     docker-compose build nginx redis workspace php-fpm  # Construir los contenedores para que cojan la configuración
     docker-compose up -d nginx redis workspace          # levantar las máquinas
     docker-compose ps                                   # para revisar la situación
     ```    
-15. Ejecutar las migrations:
+12. Ejecutar las migrations:
     ```bash
     docker-compose exec workspace bash    # Entrar en el contenedor del workspace
     php artisan migrate --seed
     exit                                  # salir del contenedor
     ```
-16. La aplicación está corriendo en: [http://localhost:800](http://localhost:800)
+13. La aplicación está corriendo en: [http://localhost:800](http://localhost:800)
 
 
 ## Operar con docker
@@ -359,6 +368,34 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
     ```bash
     sonar-scanner
     ```
+
+## ElasticSearch con Docker
+
+No utilizar los DockerFile de Laradock, dado que están desactualizados, y además la versión del contenedor
+de ElasticSearch ha de coincidir con la de Kibana:
+
+```bash
+# Fichero ./docker/elasticsearch/Dockerfile
+FROM docker.elastic.co/elasticsearch/elasticsearch:7.4.0
+EXPOSE 9200 9300
+
+# Fichero ./docker/kibana/Dockerfile
+FROM docker.elastic.co/kibana/kibana:7.4.0
+EXPOSE 5601
+```
+
+
+Para verificar que el servidor de ElasticSearch está funcionando, le prueba es realizar curl desde el
+contenedor _workspace_:
+
+```bash
+docker-compose up -d workspace elasticsearch kibana
+docker-compose exec workspace bash    # Entrar en el contenedor
+curl -XGET elasticsearch:9200         # Muestra información del servidor, entre otra la versión de ElasticSearch
+exit                                  # Salir del contenedor
+```
+
+
 
 ## Beanstalkd con docker
 

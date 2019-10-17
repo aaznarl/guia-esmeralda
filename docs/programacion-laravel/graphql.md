@@ -49,6 +49,7 @@ type User {
     tiempoExpiracionCache: String
     persona_id: ID
     persona: Persona @belongsTo
+    etiquetas: [Etiqueta] @hasMany
 
     canViewTelescope: Boolean!
     canViewPageAdmin: Boolean!
@@ -242,7 +243,7 @@ Y este sería un ejemplo del resolver:
         if ( array_key_exists('escenarios_id', $args) ) {
             $escenarios_id_integers = array_map(function($e) { return intval($e); }, $args['escenarios_id']);
             $escenarios_id_integers = array_values( $escenarios_id_integers );
-            $tarea->establecerEscenarios( $escenarios_id_integers );
+            $tarea->escenarios()->sync( $escenarios_id_integers ); // Ejemplo: [23,92,91,108]
         }
         
         return $tarea;
@@ -311,7 +312,7 @@ Y este sería el código necesario para el "resolver" de la mutation:
         if ( array_key_exists('escenarios_id', $args) ) {
             $escenarios_id_integers = array_map(function($e) { return intval($e); }, $args['escenarios_id']);
             $escenarios_id_integers = array_values( $escenarios_id_integers );
-            $tarea->establecerEscenarios( $escenarios_id_integers );
+            $tarea->escenarios()->sync( $escenarios_id_integers ); // Ejemplo: [23,92,91,108]
         }
         
         return $tarea;
