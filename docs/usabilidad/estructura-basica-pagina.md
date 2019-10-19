@@ -1,6 +1,6 @@
 # Estructura básica pantalla
 
-Aspecto a chequear que se cumplen en cualquier pantalla de una aplicación web:
+Aspectos a chequear que se cumplen en cualquier pantalla de una aplicación web:
 
 [[TOC]]
 

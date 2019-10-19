@@ -65,6 +65,7 @@ module.exports =
                 collapsable: true,
                 children: [
                     'programacion-vue/',
+                    'programacion-vue/apollo.md'
                 ]
             },
             {
