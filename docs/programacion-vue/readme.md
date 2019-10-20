@@ -710,8 +710,64 @@ methods: {
 }
 ```
 
+## Resaltado de texto búsqueda (highlighting)
 
+Para poder resaltar el texto que se ha encontrado tras una búsqueda, lo primero que hay que hacer
+es definir una clase CSS para aplicar a los partes encontradas:
 
+```css
+.highlight
+{
+    background-color: #fffdd9;
+}
+```
 
+El resaltado de aplicará utilizando una función sencilla, definida como **method** en el componente Vue.
+Para poder utilizarla en varios componentes, lo adecuado es meterla en un **Mixin** de Vue (por ejemplo
+MixinUtiles.js). Esta es la función:
+
+```js
+export default
+{
+    methods:
+    {
+        /**
+         * Devuelve el código html del texto highlightead. 
+         * La "aguja" es el texto que se busca
+         * @param texto
+         * @param aguja
+         * @returns string
+         */
+        highlight: function( texto, aguja )
+        {
+            if ( ! texto || ! aguja ) { return texto; }
+            let agujas = aguja.split( " " );
+            let stringRexexp = agujas.reduce( 
+                (acumulado, actual) => !actual 
+                    ? '' 
+                    : ( acumulado.length > 0 ? acumulado + '|' + actual : actual ), ''
+             );
+
+            return texto.replace(
+                new RegExp( stringRexexp, 'gi' ),
+                function (match)
+                {
+                    return "<span class='highlight'>" + match + "</span>";
+                }
+            );
+        }
+    }
+}    
+```
+
+De esta forma, al mostrar cualquier campo en el que se quiera resaltar el texto de búsqueda, simplemente
+hay que pasarlo por la función ```highlight```:
+
+```vue
+<span v-html="highlight( observaciones, textoBuscado )"></span>
+```
+
+Como observación indicar que si el uusario busca varias palabras, se separan para resaltar cada una
+por separado en el texto.
 
 

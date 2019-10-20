@@ -267,6 +267,7 @@ Ejemplo de código completo para crear una factory:
 <?php
 use Faker\Generator as Faker;
 use App\Models\User;
+use Carbon\Carbon;
 
 $factory->define(User::class, function (Faker $faker) {
     static $password;
@@ -274,12 +275,15 @@ $factory->define(User::class, function (Faker $faker) {
     // A todos los usuarios les ponemos de contraseña "secret"
     return [
         'name' => substr( $faker->name, 0, User::MAX_LONG_NAME ),
-        'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES),
+        'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES / random_int(1,6)),
         'email' => $faker->unique()->safeEmail,
         'email_verified_at' => now(),
         'vegetariano' => random_int(1,3) === 1 ? true : false,
         'password' => $password ?: $password = bcrypt('secret'),
-        'remember_token' => Str::random(10)
+        'remember_token' => Str::random(10),
+        'fechaBaja' => random_int(1,3) === 1
+            ? Carbon::create( random_int(2010, 2019), random_int(0,11), random_int(1,28) )
+            : null,        
     ];
 });
 
