@@ -771,3 +771,60 @@ Como observación indicar que si el uusario busca varias palabras, se separan pa
 por separado en el texto.
 
 
+## Mover el foco a un elemento de la página
+
+Supongamos que queremos poner el foco de la página en un elemento HTML concreto, por ejemplo, en una fila concreta de una
+tabla muy larga. Esta tabla se carga dinámicamente en base a una variable Vue del "Data". Lo primero es renderizar las 
+filas atendiendo a 3 detalles:
+
+- Definir el atributo **tabindex**, porque al tener esa propiedad, ese elemento html ya será "focusable", es decir, ya pueden recibir el foco.
+- Definir el atributo **id**, para poder encontrarlo después con la función nativa de javascript ```document.getElementById```. 
+- Muy recomendable definir una clase CSS dinámica, para remarcar de alguna forma la fila seleccionada.
+
+Veamos estos 3 detalles en el siguiente ejemplo:
+
+```vue
+<tr v-for="(asiento, index) in asientos"
+    v-bind:class="classFila( asiento )"
+    v-bind:id="'asiento' + asiento.id"
+    v-bind:tabindex="1000 + index">
+
+<td>...</td>
+<td>...</td>
+</tr>
+ ```
+
+En el componente Vue es necesario crear los 2 methods de apoyo, y después utilizar el evento "**updated**"
+de Vue, que será llamado cada vez que se renderice el componente:
+
+```javascript
+methods: 
+{
+    classFila: function( asiento )
+    {
+        return {
+            seleccionado: asiento.id == this.seleccionarAsientoConId
+        };
+    },
+
+    ponerElFocoEnAsientoSeleccionado: function()
+    {
+        if ( this.seleccionarAsientoConId ) {
+            let filaEnLaQuePonerElFoco = 
+                document.getElementById("asiento" + this.seleccionarAsientoConId);
+            if ( filaEnLaQuePonerElFoco ) { filaEnLaQuePonerElFoco.focus(); }
+        }
+    }
+
+},
+updated: function () 
+{
+    // Tenemos que poner el foco en el asiento que está marcado.
+    // Hacemos uso de la función "updated", explicado aquí: 
+    // https://vuejs.org/v2/api/#updated
+    this.$nextTick(function () {
+        this.ponerElFocoEnAsientoSeleccionado();
+    })
+}
+```
+
