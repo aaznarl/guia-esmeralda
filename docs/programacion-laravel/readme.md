@@ -24,7 +24,14 @@ En profundidad:
 Comandos:
 
 ```bash
- php artisan make:migration crear_tablas_escenarios   # Crear las tablas de escenarios
+php artisan make:migration crear_tablas_escenarios   # Crear las tablas de escenarios
+
+php artisan migrate              # Ejecutar migrations pendientes
+php artisan migrate --force      # Forcing Migrations To Run In Production
+php artisan migrate:rollback     # rollback the latest migration operation (batch)
+php artisan migrate:reset        # rollback all of your migrations
+php artisan migrate:refresh      # roll back all of your migrations and then execute the migrate command
+php artisan migrate:fresh        # drop all tables from the database and then execute the migrate command
 ```
 
 ### Ejemplo de migration para crear una tabla maestra
@@ -267,19 +274,24 @@ Ejemplo de código completo para crear una factory:
 <?php
 use Faker\Generator as Faker;
 use App\Models\User;
+use Carbon\Carbon;
 
+/** @var \Illuminate\Database\Eloquent\Factory $factory */
 $factory->define(User::class, function (Faker $faker) {
     static $password;
     
     // A todos los usuarios les ponemos de contraseña "secret"
     return [
         'name' => substr( $faker->name, 0, User::MAX_LONG_NAME ),
-        'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES),
+        'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES / random_int(1,6)),
         'email' => $faker->unique()->safeEmail,
         'email_verified_at' => now(),
         'vegetariano' => random_int(1,3) === 1 ? true : false,
         'password' => $password ?: $password = bcrypt('secret'),
-        'remember_token' => Str::random(10)
+        'remember_token' => Str::random(10),
+        'fechaBaja' => random_int(1,3) === 1
+            ? Carbon::create( random_int(2010, 2019), random_int(0,11), random_int(1,28) )
+            : null,        
     ];
 });
 
@@ -377,7 +389,7 @@ class ObjetivosSeeder extends Seeder
         User::all()->each( function( User $usuario)
         {
             $usuario->objetivos()->saveMany(
-                factory( Objetivo::class, rand(1,3) )->make()
+                factory( Objetivo::class, random_int(1,3) )->make()
             );
         });
         
@@ -417,7 +429,7 @@ class CuentaSeeder extends Seeder
         {
             // Relación 1 a N: a cada usuario le añade varias cuentas (entre 1 y 2)
             $usuario->cuentas()->saveMany(     
-                factory( Cuenta::class, rand(1, 2) )->make()
+                factory( Cuenta::class, random_int(1, 2) )->make()
             );
             
             $usuario->cuentas->each( function (Cuenta $cuenta)
@@ -429,7 +441,7 @@ class CuentaSeeder extends Seeder
                 
                 /** @var Collection $asientos */        // Le añadimos varios asientos (Relación 1 a N) 
                 $asientos = $cuenta->asientos()->saveMany(
-                    factory( Asiento::class, rand(6, 20) )->make()
+                    factory( Asiento::class, random_int(6, 20) )->make()
                 );
                 
                 // Asociamos cada asiento con etiquetas   (Relación N a N entre Asientos y Etiquetas)
@@ -446,6 +458,44 @@ class CuentaSeeder extends Seeder
     }
 }
 ```
+
+## Guardar campos cifrados en la BD
+
+Si queremos que un campo concreto de algún modelo se guarde de forma cifrada en la base de datos, en primer
+lugar debemos declarar su campo en la migration de tipo **"text"** 
+([referencia postgres](http://www.postgresqltutorial.com/postgresql-char-varchar-text/)), 
+dado que así su tamaño será ilimitado, lo cual es necesario porque es muy difícil estimar la longitud final 
+de un texto cifrado:
+
+```php
+// Migration
+Schema::create('espias', function (Blueprint $table)
+{
+    $table->text('nombre'); // será cifrado
+}    
+```
+
+En el **model**, hay que utilizar los _Accessors_ y los _Mutators_ para cifrar el valor antes de ser guardado
+en la base de datos, y para descifrarlo al consultarla, tal y como se expica en la propia
+[documentación de Laravel](https://laravel.com/docs/6.x/encryption):
+
+```php
+class Espia extends Model
+{
+    public function setNombreAttribute( $valor )
+    {
+        $this->attributes['nombre'] = Crypt::encryptString( $valor );
+    }
+
+    public function getNombreAttribute( $valor )
+    {
+        return Crypt::decryptString( $valor );
+    }
+}
+```
+
+
+
 
 
 ## Gestión de errores en Laravel

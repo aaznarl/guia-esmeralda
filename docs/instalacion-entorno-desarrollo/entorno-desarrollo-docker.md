@@ -385,7 +385,7 @@ EXPOSE 5601
 ```
 
 
-Para verificar que el servidor de ElasticSearch está funcionando, le prueba es realizar curl desde el
+Para verificar que el servidor de ElasticSearch está funcionando, la prueba es realizar curl desde el
 contenedor _workspace_:
 
 ```bash
