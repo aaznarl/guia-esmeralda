@@ -741,7 +741,7 @@ export default
         highlight: function( texto, aguja )
         {
             if ( ! texto || ! aguja ) { return texto; }
-            let agujas = aguja.split( " " );
+            let agujas = aguja.trim().split( " " );
             let stringRexexp = agujas.reduce( 
                 (acumulado, actual) => !actual 
                     ? '' 
@@ -764,7 +764,10 @@ De esta forma, al mostrar cualquier campo en el que se quiera resaltar el texto 
 hay que pasarlo por la función ```highlight```:
 
 ```vue
-<span v-html="highlight( observaciones, textoBuscado )"></span>
+<span v-html="highlight( textoOriginal, textoQueHayQueResaltar )"></span>
+
+Ejemplo, si queremos meter el resaltado en el campo nombre, para que se resalte "antoni":
+<span v-html="highlight( nombre, 'antoni' )"></span>
 ```
 
 Como observación indicar que si el uusario busca varias palabras, se separan para resaltar cada una
