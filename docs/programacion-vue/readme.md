@@ -831,3 +831,136 @@ updated: function ()
 }
 ```
 
+## Migas de pan
+
+Para construir las migas de pan de una página existen múltiples soluciones y paquetes de Vue. La mayoría
+de estas soluciones están integradas en el *vue-router*, suponiendo cierto acoplamiento entre las migas
+y las rutas de vue, e incorporando algunas restricciones.
+
+Con el objetivo de alcanzar un **acoplamiento nulo**, alcanzar una **flexibilidad máxima** en las migas, y considerando
+que las migas de pan suponen un desarrollo muy reducido, se propone una **solución a medida**, directa,
+y que permite cualquier virguería y personalización. 
+
+Es importante destacar que unas buenas migas de pan no son genéricas, sino que están personalizadas
+al contenido de la página que se está mostrando. Véanse estos ejemplos sobre una aplicación llamada "Saturno":
+
+::: warning Ejemplo migas genéricas no deseables
+Saturno > Procedimiento > expediente > editar trámite 
+:::
+
+::: tip Ejemplo bueno
+Saturno > [Becas guardería](#) > [BECA/0234/19](#) > editar [Propuesta de resolución 23/9/2019](#)
+:::
+
+Las migas se definen totalmente a medida en una función *computed* en cada componente de tipo página. Ejemplo:
+
+```html
+<template>        
+    <Breadcrumbs v-bind:lista-breadcrumbs="migas"></Breadcrumbs>
+    
+    <h1>Editar servicio</h1>
+    ...
+</template>
+<script>
+import Breadcrumbs from '../../components/Breadcrumbs';
+export default {
+    name: "EditarServicio",
+    components: { Breadcrumbs },
+    data () 
+    {
+        return {
+            servicioById: null
+        }
+    },
+    apollo: {
+        servicioById: function () { ... }
+    },
+    computed: 
+    {
+        migas: function ()
+        {
+            let nombreServicio = this.servicioById ? this.servicioById.nombre : '';
+
+            return [
+                { texto: "Mis servicios",                       
+                  componente: 'MisServicios',   parametros: undefined 
+                },
+                { texto: "Editar Servicio " + nombreServicio,   
+                  componente: 'EditarServicio', parametros: {id: this.id ? this.id : 0} 
+                }
+            ]
+        }
+    }
+    
+}
+</script>
+```
+
+Por supuesto es necesario tener un componente genérico para pintar las migas de pan. Éste sería un 
+ejemplo hecho con bootstrap:
+
+```html
+<template>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb pl-0">
+            <li class="breadcrumb-item">
+                <a v-bind:href="urlHome">Lares</a>
+            </li>
+            <li v-for="(breadcrumb, idx) in listaBreadcrumbs"
+                :key="idx"
+                v-bind:class="{'breadcrumb-item': true, 'active': (idx === iUltimo)}"
+                v-bind:aria-current=" idx === iUltimo ? 'page' : ''">
+                <router-link
+                        v-if="breadcrumb.componente && idx !== iUltimo"
+                        :to="{ name: breadcrumb.componente, params: breadcrumb.parametros }"
+                        v-text="breadcrumb.texto"
+                ></router-link>
+
+                <a v-if="!breadcrumb.componente && breadcrumb.url && idx !== iUltimo"
+                   v-bind:href="breadcrumb.url"
+                   v-text="breadcrumb.texto"
+                ></a>
+
+                <a v-if="idx === iUltimo"
+                   href="#"
+                   v-text="breadcrumb.texto"
+                   aria-current="page"
+                   class="breadcrumb-item active"
+                ></a>
+            </li>
+        </ol>
+    </nav>
+</template>
+
+
+<script>
+    export default {
+        name: "Breadcrumbs",
+        components: {},
+        props: {
+            listaBreadcrumbs: {
+                /* Array de objetos con 3 campos: texto, componente ó url, parametros */
+                type: Array,  
+                required: true
+            }
+        },
+        data () {
+            return {}
+        },
+        methods: {},
+        computed: {
+            iUltimo: function () {
+                return this.listaBreadcrumbs.length - 1;
+            },
+            urlHome: function () {
+                return document.getElementById("url").getAttribute("content");
+            }
+        }
+    }
+</script>
+```
+
+
+
+
+
