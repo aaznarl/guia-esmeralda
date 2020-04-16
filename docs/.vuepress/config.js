@@ -73,8 +73,10 @@ module.exports =
                 collapsable: true,
                 children: [
                     'usabilidad/estructura-basica-pagina.md',
-                    'usabilidad/formularios.md',
-                    'usabilidad/tablas.md',
+                    'usabilidad/tipografia.md',
+                    'usabilidad/listas-elementos.md',
+                    'usabilidad/CRUDs.md',                    
+                    'usabilidad/formularios.md',                    
                 ]
             }
             

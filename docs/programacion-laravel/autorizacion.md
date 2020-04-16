@@ -492,7 +492,7 @@ class CuentaPolicy
      * @return bool
      * @throws \Exception
      **/
-    public function show(User $user, Cuenta $cuenta)
+    public function view(User $user, Cuenta $cuenta)
     {
         if ( $user->id == $cuenta->user_id ) { return true; }
 
@@ -516,7 +516,7 @@ class CuentaPolicy
      * @return bool
      * @throws \Exception
      */
-    public function edit(User $user, Cuenta $cuenta)
+    public function update(User $user, Cuenta $cuenta)
     {
         if ( $user->id == $cuenta->user_id ) { return true; }
         if ( $user->hasPermissionTo( TipoPermiso::CUENTAS_EDITAR_TODAS )){ return true; }

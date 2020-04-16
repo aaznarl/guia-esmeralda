@@ -65,10 +65,30 @@ type User {
 extend type Query {
     me: User @auth
     quienSoy: String @field(resolver: "App\\Http\\GraphQL\\Queries\\UserQuery@quienSoy")
-    usuarios: [User] @all
+    usuarios: [User] @all    
 }
 
 extend type Mutation {
+
+    contactoById(id: ID! @eq): Contacto
+    @middleware(checks: ["auth"])
+    @can(ability: "show", find: "id")
+    @find
+
+    updateUsuario (
+        id: ID! @eq
+    ): User!
+    @middleware(checks: ["auth"])
+    @can(ability: "update", find: "id")
+    @update
+    
+    deleteContacto (
+        id: ID!
+    ): Contacto
+    @middleware(checks: ["auth"])
+    @can(ability: "delete", find: "id")
+    @delete
+
    login(username: String!, password: String!): User @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@login")
    refreshLdapUser: Boolean @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@refreshLdapUser")
    refreshLdap: Boolean @field(resolver: "App\\Http\\GraphQL\\Mutations\\UserMutator@refreshLdap")
@@ -406,6 +426,85 @@ en el modelo "Tarea" (Tarea.php):
         }
     }
 ```
+
+
+## Ejemplo Nodo GraphQL totalmente manual
+
+A veces, es necesario realizar una consulta muy complicada, o que por motivos de rendimiento, de lógica de negocio, o cualquier otra
+razón parece adecuado realizar totalmente a mano, sin utilizar los *models* o *Eloquent*. En este caso, se puede programar una
+**función resolver** totalmente manual, que devuelve un simple array. Ejemplo:
+
+```php
+use App\Models\Activo;
+use Illuminate\Support\Facades\DB;
+
+class ActivoQuery
+{
+    /**
+     * Obtiene la lista de activos
+     * @return \Illuminate\Support\Collection
+     */
+    public function activosInventarioOptimizado($parent, array $args, $context, $info)
+    {
+        $inventarioId = intval( $args['inventario_id'] );
+        $activos = DB::select( <<<QUERY
+
+SELECT activos.id
+	  ,tiposActivos.nombre AS [Tipo]
+      ,activos.numeroInventario
+      ,activos.numeroSerie
+	  ,activos.contabilizado
+	  ,activos.descripcion
+
+	  ,unidadesActivos.id AS [unidad_id]
+	  ,unidadesActivos.nombre AS [unidad_nombre]
+
+	  ,personas.id AS [persona_id]
+	  ,personas.nombre AS [persona_nombre]
+	  ,personas.apellidos AS [persona_apellidos]
+	  ,unidadesPersonas.id AS [persona_unidad_id]
+	  ,unidadesPersonas.nombre AS [persona_unidad_nombre]
+
+FROM activos 
+    
+	 INNER JOIN inventarios_activos ON (activos.id = inventarios_activos.activo_id)
+	 INNER JOIN inventarios ON (inventarios.id = inventarios_activos.inventario_id)
+	 INNER JOIN tiposActivos ON (tiposActivos.id = activos.tipo_id)
+
+	 LEFT OUTER JOIN unidades AS unidadesActivos ON (unidadesActivos.id = activos.id)
+
+	 LEFT OUTER JOIN personas ON (personas.id = activos.persona_id)
+	 LEFT OUTER JOIN unidades AS unidadesPersonas ON (unidadesPersonas.id = personas.unidad_id)
+
+WHERE inventarios.id = $inventarioId
+            
+QUERY);
+
+        return $activos;
+    }
+}
+```
+
+En el esquema GraphQL sólo hay que definir una nueva **query** vinculada con esa función. Dado que la función devuelve un array
+de objetos muy personalizados a esta necesidad concreta, hay que definir un nuevo **graphql type** para poder definir que
+el nodo devolverá un array de objetos de ese tipo. En este ejemplo se puede ver la definición del tipo *ActivoOptimizado* y el
+nodo vinculado a la función:
+
+```graphql
+type ActivoOptimizado {
+    Tipo: String,
+    numeroInventario: String!,
+    numeroSerie: String!,
+    unidad_nombre: String,    
+    persona_nombre: String    
+}
+
+extend type Query @middleware(checks: ["auth"])
+{
+    activosOptimizado( inventario_id: Int! ): [ActivoOptimizado] @field(resolver: "ActivoQuery@activosInventarioOptimizado")
+}
+```
+
 
 
 

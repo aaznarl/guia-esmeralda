@@ -1,8 +1,21 @@
 # Test en Laravel
 
+[[TOC]]
+
 Referencias básicas:
 
 - [The perfect unit test](https://javascriptplayground.com/the-perfect-javascript-unit-test/)
+
+## Test a implementar sobre un modelo
+
+Dado un *Model* de Laravel, se hace muy recomendable implementar los siguientes test:
+
+- Testear que funcionan todas sus relaciones
+- Testear que funcionan sus queries GraphQL
+- Testear que funcionan cada una de sus Mutations
+- Testear que funcionan cada una de las funciones de su Policy
+- Testear que funciona la indexación con Elasticsearch y la búsqueda
+
 
 
 ## Ejemplo: Tests de funcionamiento básico de la aplicación
