@@ -66,6 +66,47 @@ Es muy útil porque permite por ejemplo tener en una ventana corriendo el ```yar
 dentro del servidor linux de homestead, en otra etar con *tinker*... 
 
 
+## Instalación de PHP
+
+[Descargar](https://www.php.net/downloads.php) la última versión de "*PHP Non Thread Safe for windows*".
+Después, copiar el fichero ```php.ini-development``` (o php.production si estás en producción) en otro llamado ```php.ini```.
+Abrir el fichero *php.ini* y descomentar estas líneas:
+
+```shell script
+set fastcgi.impersonate = 1
+set cgi.fix_pathinfo=1
+set cgi.force_redirect=0
+extension_dir=“ext”
+
+# Subir el tamaño, no viene mal
+upload_max_filesize=2M
+
+# Subir el tiempo de ejecución: poner 60 segundos no está mal
+max_execution_time=120    
+
+# Tampoco está mal subir la memoria de ejecución: poner 256 por ejemplo
+memory_limit=128M
+
+Activar extensión fileinfo
+Activar extensión gd2
+
+# Para las traducciones
+Activar extensión gettext
+Activar extensión mbstring
+
+# Enable openssl
+extension=php_openssl.dll
+extension=ldap
+```
+
+Para instalar el controlador PHP de SQL Server:
+
+- [Descarga controladores php para windows](https://docs.microsoft.com/es-es/sql/connect/php/download-drivers-php-sql-server?view=sql-server-2017)
+- [Loading de php sql driver](https://docs.microsoft.com/es-es/sql/connect/php/loading-the-php-sql-driver?view=sql-server-2017)
+- Al ejecutar el instalable, guardar el dll en la carperta “ext” de php.
+- Registrarlo en el fichero php.ini:  ``` extension=php_sqlsrv_72_nts_x86.dll ```
+
+
 ## Instalación de PHPStorm
  
 [PHPStorm](https://www.jetbrains.com/phpstorm/specials/phpstorm/phpstorm.html) es un entorno de desarrollo de 

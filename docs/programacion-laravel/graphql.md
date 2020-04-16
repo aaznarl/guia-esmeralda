@@ -5,6 +5,12 @@ El paquete elegido para implementar un _endpoint_ de GraphQL con Laravel es **nu
 - [lighthouse-php.com/](https://lighthouse-php.com/) - Página principal con la documentación
 - [nuwave/lighthouse en github](https://github.com/nuwave/lighthouse)
 
+Como cliente GraphQL para poder realizar pruebas contra el motor, es **indispensable** integrar en el proyecto uno de estos
+2 clientes GraphQL:
+
+- [Altair](https://github.com/XKojiMedia/laravel-altair-graphql) - laravel-altair-graphql. Tiene la funcionalidad para subir archivos.
+- [Playground](https://github.com/mll-lab/laravel-graphql-playground) - laravel-graphql-playground.
+
 Tabla de contenidos:
 
 [[TOC]]
