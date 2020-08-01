@@ -9,481 +9,6 @@ Referencias básicas:
 [[TOC]]
 
 
-## Ejemplo: Página Listado simple de algo
-
-Para crear una página básica hay que crear una carpeta y meter dentro 3 ficheros:
-
-- El fichero "index" es muy sencillo, pero sirve para facilitar la importanción del componente
-- El fichero "queries.js" permite guardar aisladas las consultas GraphQL
-- El fichero "PaginaTareas.js" tiene el componente Vue de la lista de tareas (ejemplo que cogemos para este caso). 
-
-Un ejemplo del fichero _index.js_:
-
-```javascript
-import MisCuentas from './MisCuentas';
-export default MisCuentas;
-```
-
-```js
-import gql from 'graphql-tag'
-
-
-/**********************************
- * READ misCuentas
- **********************************/
-
-export const GET_misCuentas = gql`
-    query misCuentas {
-        misCuentas {
-            id
-            nombre
-            descripcion
-            orden
-            activa
-            claseCSS
-        }
-    }`;
-```
-
-Y por último, el componente Vue completo de la página:
-
-```js
-<template>
-    <div class="container mb-5"  style="min-height: 90vh;">
-
-        <Breadcrumbs v-bind:lista-breadcrumbs="breadcrumbs"></Breadcrumbs>
-        
-        <div class="d-flex justify-content-between flex-wrap">
-            <CabeceraPagina titulo="Mis cuentas"
-                            md-descripcion="Listado con todas las cuentas abiertas"
-            ></CabeceraPagina>
-            
-            <div class="text-right">
-                <button type="button"
-                        class="btn btn-outline-primary btn-sm"
-                        style="white-space: nowrap;"
-                        v-on:click=""
-                >Nueva cuenta</button>
-            </div>
-        </div>
-        
-        <div v-if="this.$apollo.queries.misCuentas.loading" class="mt-5">
-            Cargando la lista de cuentas
-            <img :src="assetCliente('img/loading160x20-12bbad.gif')" alt="Cargando la lista de cuentas" />
-        </div>
-
-
-        <div v-if=" ! hayCuentas && ! this.$apollo.queries.misCuentas.loading" style="min-height: 90vh;" >
-            <div class="p-3 mb-2 bg-info text-success">
-                <strong>Usted no tiene ninguna cuenta abierta</strong>
-            </div>
-        </div>
-        
-        <div v-if="hayCuentas">
-            <ListaCuentas v-bind:cuentas="misCuentas"></ListaCuentas>
-        </div>
-        
-    </div>
-</template>
-
-
-<script>
-    import CabeceraPagina from '../../components/CabeceraPagina';
-    import Breadcrumbs from '../../components/Breadcrumbs';
-    import FormularioInputTexto from '../../components/FormularioInputTexto';
-    import ListaCuentas from '../../components/ListaCuentas';
-    import { GET_misCuentas } from './queries';
-
-    export default {
-        name: 'MisCuentas',
-        components: {
-            CabeceraPagina,
-            FormularioInputTexto,
-            ListaCuentas,
-            Breadcrumbs
-        },
-        apollo: {
-            misCuentas: function () {
-                return {
-                    query: GET_misCuentas,
-                    variables: {},
-                    fetchPolicy: 'cache-and-network',
-                    error (error) {
-                        this.ajaxMisCuentas.mensajeError = 'Error al cargar la lista de cuentas';
-                        this.gestionarErroresGraphQL( error ); 
-                    }
-                }
-            }
-        },
-        data () {
-            return {
-                misCuentas: [],
-                listaBreadcrumbs: [],
-
-                ajaxMisCuentas: {
-                    mensajeError: ''
-                },
-            }
-        },
-        validations() {
-        },
-        methods: {
-        },
-        computed: {
-            hayCuentas: function ()
-            {
-                return this.misCuentas.length > 0;
-            },
-            breadcrumbs: function ()
-            {
-                return [
-                    { texto: "Mis cuentas",          componente: 'MisCuentas',      parametros: undefined }
-                ]
-            }
-        },
-        
-        watch: 
-        {
-            $route (to, from)
-            {
-                Mousetrap.reset();
-            }
-
-        },
-        
-        mounted() {
-            Mousetrap.reset();
-        }
-    }
-</script>
-
-<style scoped>
-
-    .campoTiempo
-    {
-        width: 8em;
-    }
-    
-</style>
-```
-
-
-
-
-## Ejemplo: Página Listado de tareas con filtrado y doble query
-
-Ejemplo del fichero _queries.js_:
-
-```js
-import gql from 'graphql-tag'
-
-/**********************************
- * READ misEscenarios
- **********************************/
-
-export const GET_misEscenarios = gql`
-    query misEscenarios {
-        misEscenarios {
-            id
-            nombre
-            descripcion
-        }
-    }`;
-
-
-/**********************************
- * READ misTareas
- **********************************/
-
-export const GET_misTareas = gql`
-    query 
-    {
-        misTareas 
-        {
-            id
-            titulo
-            escenarios
-            {
-                id
-            }
-        }
-    }
-`;
-```
-
-Y por último, el componente Vue completo de la página:
-
-```js
-<template>
-    <div class="container mb-5"  style="min-height: 90vh;">
-        <Breadcrumbs v-bind:lista-breadcrumbs="breadcrumbs"></Breadcrumbs>
-        
-        <div class="d-flex justify-content-between flex-wrap">
-            <CabeceraPagina titulo="Mis tareas"
-                            md-descripcion="Listado con todas las tareas pendientes, que no han sido ocultadas hasta una fecha futura, y que se podrían realizar"
-            ></CabeceraPagina>
-
-            <div class="text-right">
-                <button type="button"
-                        class="btn btn-outline-primary btn-sm"
-                        style="white-space: nowrap;"
-                        v-on:click="botonAnadirTareaClick"
-                >Nueva tarea</button>
-                <br>
-                <div class="mt-2">
-                    <router-link :to="{ name: 'TodasTareasPendientes', params: {}}"
-                                 title="Ver todas mis tareas pendientes"
-                    >Todas pendientes</router-link>
-                </div>
-            </div>
-        </div>
-        
-        <div v-if="this.$apollo.queries.misTareas.loading" class="mt-5">
-            Cargando la lista de tareas
-            <img :src="assetCliente('img/loading160x20-12bbad.gif')" alt="Cargando la lista de tareas pendientes" />
-        </div>
-
-        <div v-if=" ! hayTareas && ! this.$apollo.queries.misTareas.loading" style="min-height: 90vh;" >
-            <div class="p-3 mb-2 bg-info text-success">
-                <strong>Ninguna tarea pendiente</strong>
-            </div>
-        </div>
-
-        <div v-if="hayTareas">
-            <ListaTareas v-bind:tareas="misTareasVisibles"></ListaTareas>
-        </div>
-        
-    </div>
-</template>
-
-
-<script>
-    import CabeceraPagina from '../../components/CabeceraPagina';
-    import Breadcrumbs from '../../components/Breadcrumbs';
-    import ListaTareas from '../../components/ListaTareas';
-    import { GET_misEscenarios, GET_misTareas } from './queries';
-
-    export default {
-        name: 'MisTareas',
-        components: {
-            CabeceraPagina,
-            Breadcrumbs,
-            ListaTareas
-        },
-        apollo: {
-            misEscenarios: function()
-            {
-                return {
-                    query: GET_misEscenarios,
-                    result(ApolloQueryResult)
-                    {
-                        if ( ApolloQueryResult.data ) {
-                            this.escenarios = ApolloQueryResult.data.misEscenarios;
-                            this.ajaxMisEscenarios.mensajeError = '';
-                        }
-                    },
-                    error (error) {
-                        this.ajaxMisEscenarios.mensajeError = 'Error al cargar los escenarios';
-                        this.gestionarErroresGraphQL( error );
-                    }
-                }
-            },
-            misTareas: function () {
-                return {
-                    query: GET_misTareas,
-                    variables: {},
-                    fetchPolicy: 'cache-and-network',
-                    error (error) {
-                        this.ajaxMisEscenarios.mensajeError = 'Error al cargar la lista de tareas';
-                        this.gestionarErroresGraphQL( error ); 
-                    }
-                }
-            }
-        },
-        data () {
-            return {
-                misTareas: [],
-                escenarios: [],
-                listaBreadcrumbs: [],
-
-                ajaxMisEscenarios: {
-                    mensajeError: ''
-                },
-                ajaxMisTareas: {
-                    mensajeError: ''
-                },
-            }
-        },
-        validations() {
-            return {};
-        },
-        methods: 
-        {
-            botonAnadirTareaClick()
-            {
-                Mousetrap.reset();
-                this.$router.push({ name: 'EditarTarea', params: { id: 0 }});
-                return false;  // para prevenir que si se está ejecutando esta función por Mousetrap, que la tecla 'a' siga
-            },            
-        },
-        computed: 
-        {
-            misTareasVisibles: function()
-            {
-                let self = this;
-                return this.misTareas
-                    .filter( this.esPosibleHacerTarea )
-                    .sort( (a,b) => self.segundosEstimadosRestantes(a) - self.segundosEstimadosRestantes(b) );
-            },            
-            hayTareas: function ()
-            {
-                return this.misTareasVisibles.length > 0;
-            },
-            breadcrumbs: function ()
-            {
-                return [
-                    { texto: "Mis tareas",          componente: 'MisTareas',      parametros: undefined }
-                ]
-            }
-        },
-        
-        watch: 
-        {
-            $route (to, from)
-            {
-                Mousetrap.reset();
-            }
-
-        },
-        
-        mounted() {
-            Mousetrap.reset();
-            Mousetrap.bind('a', this.botonAnadirTareaClick );
-        }
-    }
-</script>
-
-<style scoped>
-
-    .campoTiempo
-    {
-        width: 8em;
-    }
-    
-</style>
-```
-
-
-
-## Ejemplo de Componente Vue: Lista de tareas
-
-Este sería un simple componente de ejemplo, que recibe la lista a pintar como
-property:
-
-```js
-<template>
-    <div>    
-        <div v-if=" ! esPantallaMovil() " class="container"  >
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th scope="col" class="align-top">
-                            Tareas
-                            <span class="text-info">({{ numTareas }})</span>
-                        </th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(tarea, index) in tareas">
-                        <td v-bind:class="clasesCssCeldaTarea( index )">
-                            <div>
-                                <span v-text="tarea.titulo"></span>    
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    
-    
-        <table v-if=" esPantallaMovil() "   class="table table-striped mx-0 px-0">
-            <thead>
-            <tr>
-                <th scope="col">
-                    Tareas
-                    <span class="text-info">({{ numTareas }})</span>
-                </th>
-            </tr>
-            </thead>
-            <tbody>
-                <tr v-for="(tarea, index) in tareas">
-                    <td>
-                        <div class="mb-2">
-                            <span v-text="tarea.titulo"></span>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-
-    </div>        
-</template>
-
-<script>
-    export default {
-        name: 'ListaTareas',
-        components: {},
-        data () 
-        {
-            return {
-                iSeleccionada: null
-            }
-        },
-        props: {
-            tareas: {
-                type: [Array],
-                required: false
-            }
-        },
-        methods: 
-        {
-            clasesCssCeldaTarea: function ( iTarea )
-            {
-                return {
-                    'd-flex': true,
-                    'justify-content-between': true,
-                    'align-top': true,
-                    'seleccionado': iTarea === this.iSeleccionada
-                };
-            },            
-        },
-        computed:
-        {
-        },
-        watch:
-        {
-            $route (to, from)
-            {
-                Mousetrap.reset();
-            }
-        },
-        mounted() 
-        {
-            Mousetrap.reset();
-            Mousetrap.bind('up', this.seleccionarTareaAnterior );
-            Mousetrap.bind('down', this.seleccionarTareaSiguiente );
-            Mousetrap.bind('e', this.editarTareaSeleccionada );
-            Mousetrap.bind('enter', this.ejecutarTareaSeleccionada );
-        }
-
-    }
-</script>
-
-<style scoped>
-</style>
-```
-
-
 ## Gestión de errores en Vue
 
 Vue permite definir, tras crear el objeto Vue principal de la aplicación, una función a la que llamar
@@ -960,7 +485,672 @@ ejemplo hecho con bootstrap:
 </script>
 ```
 
+## Limitar el ratio de llamadas a una función costosa (DEBOUNCE)
+
+La función **debounce** se utiliza para no ejecutar el código de una función hasta que pasen N milisegundos
+desde la última vez que se la llamó. Esto es muy útil para limitar el número de veces que se ejecuta una función
+costosa en procesamiento, en memoria o en tiempos de entrada/salida (llamadas http por ejemplo).
+
+Es importante destacar que si se desea limitar el número de llamadas ajax al servidor, ha de seguirse lo documentado
+en la [sección de la librería Apollo: Debounce](./apollo.md#debounce). Si lo que se desea es limitar el número
+de veces que se ejecuta una función costosa, hay que hacer lo que se expone a continuación.
+
+La forma de utilizar *debounce* en Vue se encuentra [documentada de forma oficial](https://vuejs.org/v2/guide/computed.html#Watchers),
+y consiste en asociar una función propia al objeto Vue en el método "*created*". Antes de nada, es necesario
+haber incorporado la librería [lodash](https://lodash.com/) al proyecto, y así poder llamar a sus funciones a través
+ del objeto "_". 
+
+En el siguiente *componente Vue* de ejemplo, tenemos una caja de texto para filtrar un array muy grande en javascript:
+
+```html
+<template>
+    <form-text v-model="textoFiltrador" @keyup="filtrarDebounced()" />
+    <listadoBuzones :buzones="buzonesFiltrados" />    
+</template>
+```
+
+Pues bien, habría que añadir una función en los *methods* y otra en el cuerpo de la función *created*. Este es un
+ejemplo para **añadir una función con debounce al evento onClick**:
+
+```javascript
+export default {
+    
+    name: "PaginaBuzones",
+    data() {
+        return {
+            buzones: [],
+            buzonesFiltrados: [],
+            textoFiltrador: ""
+        }
+    },
+
+    methods: {
+        filtrarBuzones( event ) {
+            this.buzonesFiltrados = this.textoFiltrador 
+                ? this.flexSearch.search(this.textoFiltrador)  // filtrar buzones
+                : this.buzones;
+        },
+    },
+    created() {
+        this.filtrarDebounced = _.debounce(this.filtrarBuzones, 500); // 500 ms
+    },
+
+}
+```
+
+Y aquí otro ejemplo para **añadir una función con debounce a un watcher** para seleccionar una fila de una tabla:
+
+```javascript
+
+import lodash_debounce from 'lodash/debounce';
+
+export default {   
+    name: "ListaTareas",
+    data() { return {} },
+
+    methods: {
+        ponerElFocoEnFilaSeleccionada ( event )
+        {
+            let filaPonerElFoco = document.getElementById("tarea" + this.iSeleccionada);
+            if ( filaPonerElFoco ) { filaPonerElFoco.focus(); }
+        }
+    },
+    watch:
+    {
+        iSeleccionada: function()
+        {
+            lodash_debounce( this.ponerElFocoEnFilaSeleccionada, 1000 );
+        }
+    },
+
+}
+```
 
 
+
+## Filtrar con desplegable con vue-select
+
+En el código html se debe poner un desplegable, que recibirá un array de objetos. Observar estos detalles:
+
+- La etiqueta vue-select tiene una propiedad **label** que hace referencia a la propiedad del objeto que se 
+  muestra en el desplegable. Es muy recomendable definir esta propiedad para evitar warnings.
+- La función **reduce** indica qué campo se va a utilizar como identificador único de cada item.
+- El array **options** es un array de objetos que puede tener muchas propiedades
+- Sólo hace falta definir el slot **option** si los items no tienen una propiedad "label". Si la tienen, la muestra por defecto
+- El slot **spinner** es opcional
+- El slot **selected-option** es opcional. Si no, coge el valor definido en la propiedad "label"  
+
+```html
+<div class="d-flex ">
+    <label class="mr-2">Filtrar por línea estratégica:</label>
+    <vue-select
+        :options="planDeAccionById.lineasEstrategicas"
+        v-model="lineaEstrategicaFiltrar"
+        :reduce="linea => linea.id"
+        :appendToBody="true"
+        label="codigo"
+        class="d-inline lineaEstrategicaFiltrar">
+        
+        <template v-slot:selected-option="option">
+            <span>{{ option.codigo }} - {{ option.nombre }}</span>
+        </template>
+
+        <template v-slot:option="option" class="">
+            <span :title="option.nombre" v-text="option.codigo"></span>
+        </template>
+
+        <template slot="spinner">
+            <Loading v-if="this.$apollo.queries.planDeAccionById.loading" class="mx-3" />
+        </template>
+        
+    </vue-select>
+</div>
+```
+
+Se requieren algunas variables en el *data* del componente:
+
+```javascript
+apollo: {
+    planDeAccionById: function () {
+        return {
+            fetchPolicy: 'cache-and-network',
+            query: GET_planDeAccionById,
+            variables() {
+                return {
+                    id: this.id
+                };
+            },
+            skip() { return this.id === 0; },
+        }
+    }
+},
+
+data () {
+    return {
+        planDeAccionById: null,
+        unidadFiltrar: null,
+        lineaEstrategicaFiltrar: null,
+    }
+}
+```
+
+y la función computed que realiza el filtro:
+
+```javascript
+computed: {
+   acciones: function ()
+   {
+      if ( ! this.planDeAccionById ) { return []; }
+
+      let accionesFiltradas = this.planDeAccionById.acciones;
+
+      if ( this.unidadFiltrar ) {
+         accionesFiltradas = accionesFiltradas.filter( 
+             (accion) => accion.unidad === this.unidadFiltrar
+         )
+      }
+      if ( this.lineaEstrategicaFiltrar ) {
+         let idLineaFiltrar = this.lineaEstrategicaFiltrar;
+         accionesFiltradas = accionesFiltradas.filter( function (accion)
+         {
+            return accion.lineasEstrategicas.some( (linea) => linea.id === idLineaFiltrar );
+         });
+      }
+
+      return accionesFiltradas;
+   }
+}
+```
+
+y por último algo de css para hacer más largo el desplegable:
+
+```css
+.lineaEstrategicaFiltrar
+{
+    min-width: 10rem;
+}
+
+.vs__actions {
+    cursor: pointer;
+}
+```
+
+
+
+## Componentes de ejemplo:
+
+### Ejemplo: Página Listado simple de algo
+
+Para crear una página básica hay que crear una carpeta y meter dentro 3 ficheros:
+
+- El fichero "index" es muy sencillo, pero sirve para facilitar la importanción del componente
+- El fichero "queries.js" permite guardar aisladas las consultas GraphQL
+- El fichero "PaginaTareas.js" tiene el componente Vue de la lista de tareas (ejemplo que cogemos para este caso). 
+
+Un ejemplo del fichero _index.js_:
+
+```javascript
+import MisCuentas from './MisCuentas';
+export default MisCuentas;
+```
+
+```js
+import gql from 'graphql-tag'
+
+
+/**********************************
+ * READ misCuentas
+ **********************************/
+
+export const GET_misCuentas = gql`
+    query misCuentas {
+        misCuentas {
+            id
+            nombre
+            descripcion
+            orden
+            activa
+            claseCSS
+        }
+    }`;
+```
+
+Y por último, el componente Vue completo de la página:
+
+```js
+<template>
+    <div class="container mb-5"  style="min-height: 90vh;">
+
+        <Breadcrumbs v-bind:lista-breadcrumbs="breadcrumbs"></Breadcrumbs>
+        
+        <div class="d-flex justify-content-between flex-wrap">
+            <CabeceraPagina titulo="Mis cuentas"
+                            md-descripcion="Listado con todas las cuentas abiertas"
+            ></CabeceraPagina>
+            
+            <div class="text-right">
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        style="white-space: nowrap;"
+                        v-on:click=""
+                >Nueva cuenta</button>
+            </div>
+        </div>
+        
+        <div v-if="this.$apollo.queries.misCuentas.loading" class="mt-5">
+            Cargando la lista de cuentas
+            <img :src="assetCliente('img/loading160x20-12bbad.gif')" alt="Cargando la lista de cuentas" />
+        </div>
+
+
+        <div v-if=" ! hayCuentas && ! this.$apollo.queries.misCuentas.loading" style="min-height: 90vh;" >
+            <div class="p-3 mb-2 bg-info text-success">
+                <strong>Usted no tiene ninguna cuenta abierta</strong>
+            </div>
+        </div>
+        
+        <div v-if="hayCuentas">
+            <ListaCuentas v-bind:cuentas="misCuentas"></ListaCuentas>
+        </div>
+        
+    </div>
+</template>
+
+
+<script>
+    import CabeceraPagina from '../../components/CabeceraPagina';
+    import Breadcrumbs from '../../components/Breadcrumbs';
+    import FormularioInputTexto from '../../components/FormularioInputTexto';
+    import ListaCuentas from '../../components/ListaCuentas';
+    import { GET_misCuentas } from './queries';
+
+    export default {
+        name: 'MisCuentas',
+        components: {
+            CabeceraPagina,
+            FormularioInputTexto,
+            ListaCuentas,
+            Breadcrumbs
+        },
+        apollo: {
+            misCuentas: function () {
+                return {
+                    query: GET_misCuentas,
+                    variables: {},
+                    fetchPolicy: 'cache-and-network',
+                    error (error) {
+                        this.ajaxMisCuentas.mensajeError = 'Error al cargar la lista de cuentas';
+                        this.gestionarErroresGraphQL( error ); 
+                    }
+                }
+            }
+        },
+        data () {
+            return {
+                misCuentas: [],
+                listaBreadcrumbs: [],
+
+                ajaxMisCuentas: {
+                    mensajeError: ''
+                },
+            }
+        },
+        validations() {
+        },
+        methods: {
+        },
+        computed: {
+            hayCuentas: function ()
+            {
+                return this.misCuentas.length > 0;
+            },
+            breadcrumbs: function ()
+            {
+                return [
+                    { texto: "Mis cuentas",          componente: 'MisCuentas',      parametros: undefined }
+                ]
+            }
+        },
+        
+        watch: 
+        {
+            $route (to, from)
+            {
+                Mousetrap.reset();
+            }
+
+        },
+        
+        mounted() {
+            Mousetrap.reset();
+        }
+    }
+</script>
+
+<style scoped>
+
+    .campoTiempo
+    {
+        width: 8em;
+    }
+    
+</style>
+```
+
+
+
+
+### Ejemplo: Página Listado de tareas con filtrado y doble query
+
+Ejemplo del fichero _queries.js_:
+
+```js
+import gql from 'graphql-tag'
+
+/**********************************
+ * READ misEscenarios
+ **********************************/
+
+export const GET_misEscenarios = gql`
+    query misEscenarios {
+        misEscenarios {
+            id
+            nombre
+            descripcion
+        }
+    }`;
+
+
+/**********************************
+ * READ misTareas
+ **********************************/
+
+export const GET_misTareas = gql`
+    query 
+    {
+        misTareas 
+        {
+            id
+            titulo
+            escenarios
+            {
+                id
+            }
+        }
+    }
+`;
+```
+
+Y por último, el componente Vue completo de la página:
+
+```js
+<template>
+    <div class="container mb-5"  style="min-height: 90vh;">
+        <Breadcrumbs v-bind:lista-breadcrumbs="breadcrumbs"></Breadcrumbs>
+        
+        <div class="d-flex justify-content-between flex-wrap">
+            <CabeceraPagina titulo="Mis tareas"
+                            md-descripcion="Listado con todas las tareas pendientes, que no han sido ocultadas hasta una fecha futura, y que se podrían realizar"
+            ></CabeceraPagina>
+
+            <div class="text-right">
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        style="white-space: nowrap;"
+                        v-on:click="botonAnadirTareaClick"
+                >Nueva tarea</button>
+                <br>
+                <div class="mt-2">
+                    <router-link :to="{ name: 'TodasTareasPendientes', params: {}}"
+                                 title="Ver todas mis tareas pendientes"
+                    >Todas pendientes</router-link>
+                </div>
+            </div>
+        </div>
+        
+        <div v-if="this.$apollo.queries.misTareas.loading" class="mt-5">
+            Cargando la lista de tareas
+            <img :src="assetCliente('img/loading160x20-12bbad.gif')" alt="Cargando la lista de tareas pendientes" />
+        </div>
+
+        <div v-if=" ! hayTareas && ! this.$apollo.queries.misTareas.loading" style="min-height: 90vh;" >
+            <div class="p-3 mb-2 bg-info text-success">
+                <strong>Ninguna tarea pendiente</strong>
+            </div>
+        </div>
+
+        <div v-if="hayTareas">
+            <ListaTareas v-bind:tareas="misTareasVisibles"></ListaTareas>
+        </div>
+        
+    </div>
+</template>
+
+
+<script>
+    import CabeceraPagina from '../../components/CabeceraPagina';
+    import Breadcrumbs from '../../components/Breadcrumbs';
+    import ListaTareas from '../../components/ListaTareas';
+    import { GET_misEscenarios, GET_misTareas } from './queries';
+
+    export default {
+        name: 'MisTareas',
+        components: {
+            CabeceraPagina,
+            Breadcrumbs,
+            ListaTareas
+        },
+        apollo: {
+            misEscenarios: function()
+            {
+                return {
+                    query: GET_misEscenarios,
+                    result(ApolloQueryResult)
+                    {
+                        if ( ApolloQueryResult.data ) {
+                            this.escenarios = ApolloQueryResult.data.misEscenarios;
+                            this.ajaxMisEscenarios.mensajeError = '';
+                        }
+                    },
+                    error (error) {
+                        this.ajaxMisEscenarios.mensajeError = 'Error al cargar los escenarios';
+                        this.gestionarErroresGraphQL( error );
+                    }
+                }
+            },
+            misTareas: function () {
+                return {
+                    query: GET_misTareas,
+                    variables: {},
+                    fetchPolicy: 'cache-and-network',
+                    error (error) {
+                        this.ajaxMisEscenarios.mensajeError = 'Error al cargar la lista de tareas';
+                        this.gestionarErroresGraphQL( error ); 
+                    }
+                }
+            }
+        },
+        data () {
+            return {
+                misTareas: [],
+                escenarios: [],
+                listaBreadcrumbs: [],
+
+                ajaxMisEscenarios: {
+                    mensajeError: ''
+                },
+                ajaxMisTareas: {
+                    mensajeError: ''
+                },
+            }
+        },
+        validations() {
+            return {};
+        },
+        methods: 
+        {
+            botonAnadirTareaClick()
+            {
+                Mousetrap.reset();
+                this.$router.push({ name: 'EditarTarea', params: { id: 0 }});
+                return false;  // para prevenir que si se está ejecutando esta función por Mousetrap, que la tecla 'a' siga
+            },            
+        },
+        computed: 
+        {
+            misTareasVisibles: function()
+            {
+                let self = this;
+                return this.misTareas
+                    .filter( this.esPosibleHacerTarea )
+                    .sort( (a,b) => self.segundosEstimadosRestantes(a) - self.segundosEstimadosRestantes(b) );
+            },            
+            hayTareas: function ()
+            {
+                return this.misTareasVisibles.length > 0;
+            },
+            breadcrumbs: function ()
+            {
+                return [
+                    { texto: "Mis tareas",          componente: 'MisTareas',      parametros: undefined }
+                ]
+            }
+        },
+        
+        watch: 
+        {
+            $route (to, from)
+            {
+                Mousetrap.reset();
+            }
+
+        },
+        
+        mounted() {
+            Mousetrap.reset();
+            Mousetrap.bind('a', this.botonAnadirTareaClick );
+        }
+    }
+</script>
+
+<style scoped>
+
+    .campoTiempo
+    {
+        width: 8em;
+    }
+    
+</style>
+```
+
+
+
+### Ejemplo de Componente Vue: Lista de tareas
+
+Este sería un simple componente de ejemplo, que recibe la lista a pintar como
+property:
+
+```js
+<template>
+    <div>    
+        <div v-if=" ! esPantallaMovil() " class="container"  >
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col" class="align-top">
+                            Tareas
+                            <span class="text-info">({{ numTareas }})</span>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr v-for="(tarea, index) in tareas">
+                        <td v-bind:class="clasesCssCeldaTarea( index )">
+                            <div>
+                                <span v-text="tarea.titulo"></span>    
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    
+    
+        <table v-if=" esPantallaMovil() "   class="table table-striped mx-0 px-0">
+            <thead>
+            <tr>
+                <th scope="col">
+                    Tareas
+                    <span class="text-info">({{ numTareas }})</span>
+                </th>
+            </tr>
+            </thead>
+            <tbody>
+                <tr v-for="(tarea, index) in tareas">
+                    <td>
+                        <div class="mb-2">
+                            <span v-text="tarea.titulo"></span>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>        
+</template>
+
+<script>
+    export default {
+        name: 'ListaTareas',
+        components: {},
+        data () 
+        {
+            return {
+                iSeleccionada: null
+            }
+        },
+        props: {
+            tareas: {
+                type: [Array],
+                required: false
+            }
+        },
+        methods: 
+        {
+            clasesCssCeldaTarea: function ( iTarea )
+            {
+                return {
+                    'd-flex': true,
+                    'justify-content-between': true,
+                    'align-top': true,
+                    'seleccionado': iTarea === this.iSeleccionada
+                };
+            },            
+        },
+        computed:
+        {
+        },
+        watch:
+        {
+            $route (to, from)
+            {
+                Mousetrap.reset();
+            }
+        },
+        mounted() 
+        {
+            Mousetrap.reset();
+            Mousetrap.bind('up', this.seleccionarTareaAnterior );
+            Mousetrap.bind('down', this.seleccionarTareaSiguiente );
+            Mousetrap.bind('e', this.editarTareaSeleccionada );
+            Mousetrap.bind('enter', this.ejecutarTareaSeleccionada );
+        }
+
+    }
+</script>
+
+<style scoped>
+</style>
+```
 
 

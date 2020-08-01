@@ -73,7 +73,8 @@ const proveedorApollo = new VueApollo(
 Vue.use(VueApollo);
 ```
 
-Así, en los llamadas en las que se quiera usar la función "Debounce", simplemente hay que añadir:
+Así, en los llamadas en las que se quiera usar la función "Debounce", simplemente hay que añadir
+un parámetro "*debounceKey*" de la siguiente manera:
 
 ```js
 apollo: {

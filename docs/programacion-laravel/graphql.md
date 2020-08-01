@@ -347,7 +347,7 @@ Y este sería el código necesario para el "resolver" de la mutation:
 
 ## Ejemplo Mutation delete
  
-Para ampliar el esquema graphQL:
+Para ampliar el esquema graphQL (sólo para aquellos casos en los que no se quiera utilizar la directiva *@delete*, que es lo recomendado):
  
  ```graphql
      deleteTarea (

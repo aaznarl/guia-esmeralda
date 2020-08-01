@@ -286,7 +286,8 @@ $factory->define(User::class, function (Faker $faker) {
         'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES / random_int(1,6)),
         'email' => $faker->unique()->safeEmail,
         'email_verified_at' => now(),
-        'vegetariano' => random_int(1,3) === 1 ? true : false,
+        'vegetariano' => random_int(1,3) === 1,
+        'codigo' => Str::random( random_int(2,5) ),
         'password' => $password ?: $password = bcrypt('secret'),
         'remember_token' => Str::random(10),
         'fechaBaja' => random_int(1,3) === 1
@@ -533,5 +534,70 @@ public function report(Exception $exception)
 ```
 
 
+## Guardar y mostrar imágenes
+
+A la hora de guardar imágenes asociadas a algún modelo, es importante coger como referencia la propia documentación
+de Laravel: [Filesystem](https://laravel.com/docs/7.x/filesystem#introduction).
+ 
+Para cada grupo de imágenes, por ejemplo: "*Fotos de los contactos*", lo suyo es crear un "*disk*" específico para 
+guardar ese grupo de ficheros. Cada "*disk*" se define en el fichero de configuración ```config/filesystems.php```:
+
+```php
+'disks' => [
+   'local' => [
+       'driver' => 'local',
+      'root' => storage_path('app'),
+   ],
+
+   'fotos-contactos' => [
+      'driver' => 'local',
+      'root' => storage_path('fotos-contactos'),
+      'cache' => [
+         'store' => 'redis',
+         'expire' => 3600 * 24 * 7,
+         'prefix' => 'dracma-cache-foto-contacto',
+      ],
+   ],
+```
+ 
+El ejemplo anterior configura un volúmen de almacenamiento "*fotos-contactos*", que Laravel mapea con la carpeta 
+```storage/fotos-contactos```, pero que muy fácilmente podría migrarse a un FTP, a otra carpeta, a un S3 o donde hiciera falta. Si quisiéramos
+ hacer este volúmen de almacenamiento público, deberíamos seguir las instrucciones que se explican en la propia 
+ [documentación de Laravel](https://jira.cnmc.es/browse/DRACMA-293#the-public-disk].).
+
+Pero pongamos que no es el caso, que no queremos que las fotos de los contactos sean públicas simplemente poniendo la url de la 
+foto. Entonces lo suyo sería crear una ruta y su controller normal de Laravel. Es decir, por ejemplo esta ruta en el fichero
+```routes/web.php```:
+
+```php
+Route::get('/foto-contacto/{id}')
+    ->name('foto-contacto.show')
+    ->uses("ContactoController@foto");
+```
+Y este podría ser el controller asociado:
+
+```php
+/** 
+ * Devuelve la imagen JPG de la foto 
+ * @param Request $request 
+ * @param $id 
+ * @return \Illuminate\Http\Response 
+ * @throws \Illuminate\Contracts\Filesystem\FileNotFoundException 
+*/
+public function foto(Request $request, $id)
+{
+    /** @var FotoContacto $foto */   
+    $foto = FotoContacto::findOrFail( $id );
+
+   if ($request->user()->cannot('view', $foto)) { 
+      abort(403, 'No tiene permisos para visualizar esta foto'); 
+   };
+
+   return response( Storage::disk('fotos-contactos')->get( $foto>path ),200 )
+      ->header('Content-Type', 'image/jpeg')
+      ->header('Cache-Control', 'max-age=60'); // seconds
+}
+```
+ 
 
 
