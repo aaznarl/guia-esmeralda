@@ -6,6 +6,7 @@ Tabla de contenidos:
 
 En profundidad:
 
+- [Trabajando con la base de datos](bd.md)
 - [GraphQL en Laravel](graphql.md)
 - [Autorización](autorizacion.md)
 - [Test](test.md)
@@ -205,7 +206,7 @@ class Objetivo extends Model
     protected $guarded = ['id', 'created_at', 'updated_at', 'deleted_at', 'user_id'];
 
     // Supported casts:
-    // https://laravel.com/docs/5.8/eloquent-mutators#attribute-casting
+    // https://laravel.com/docs/8.x/eloquent-mutators#attribute-casting
     protected $casts = [
         'activo' => 'boolean',
         'conseguido_at' => 'datetime'

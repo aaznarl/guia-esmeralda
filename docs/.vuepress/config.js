@@ -53,6 +53,7 @@ module.exports =
                 collapsable: true,
                 children: [
                     'programacion-laravel/',
+                    'programacion-laravel/bd.md',
                     'programacion-laravel/autorizacion.md',
                     'programacion-laravel/graphql.md',
                     'programacion-laravel/test.md',

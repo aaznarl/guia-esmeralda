@@ -339,35 +339,49 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
 
 ## Sonarqube con docker
 
-1. Para instalar Sonarqube, tener en cuenta la [documentación](https://laradock.io/documentation/). 
-   Y está funcionando en 
+Para instalar Sonarqube, tener en cuenta la [documentación](https://laradock.io/documentation/). 
+Y está funcionando en:
+ 
    [http://localhost:9000](http://localhost:9000) (usuario/clave: admin/admin).
-   Algunos detalles que se han tenido en cuenta: 
-   - El servicio se levanta con el comando 
-     ```bash
-     docker-compose up -d sonarqube
-     ```
-   - Si no funciona y al revisar los logs hay un problema de permisos de escritura en la carpeta de log,
-     ejecutar: 
-     ```bash
-     docker-compose run --user=root --rm sonarqube chown sonarqube:sonarqube /opt/sonarqube/logs
-     ```
-   - Si la BD no está creada (se puede entrar en [pgAdmin](http://localhost:5050/browser/) y mirar si existe la BD _sonar_),
-     hay que ejecutar el script __:
-     ```bash
-     docker-compose exec postgres bash      # Entrar en el contenedor
-     cd docker-entrypoint-initdb.d/
-     bash init_sonarqube_db.sh
-     exit                                    # Salir del contenedor
-     ```
-     Ese fichero se encuentra en el proyecto, en _docker/laradock/postgres/docker-entrypoint-initdb.d/init_sonarqube_db.sh_. 
-     Si da algún problema en Windows del tipo _End of file_, sólo hay que editarlo con el IDE y añadirle un salto
-     de línea al final.
-2. Para ejecutar un análisis de Sonarqube, instalar el [scanner](https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/) en tu PC de desarrollo,
-    y después ejecutar en la línea de comandos de tu PC local, en la raiz del proyecto: 
-    ```bash
-    sonar-scanner
-    ```
+   
+El contenedor de Sonarqube se levanta con el comando 
+ ```bash
+ docker-compose up -d sonarqube
+ ```
+
+### BD de Sonarqube en postgres
+
+Si no funciona y al revisar los logs hay un problema de permisos de escritura en la carpeta de log, ejecutar: 
+ ```bash
+ docker-compose run --user=root --rm sonarqube chown sonarqube:sonarqube /opt/sonarqube/logs
+ ```
+
+Si la BD no está creada (se puede entrar en [pgAdmin](http://localhost:5050/browser/) y mirar si existe la BD _sonar_),
+hay que ejecutar el script __:
+
+ ```bash
+ docker-compose exec postgres bash      # Entrar en el contenedor
+ cd docker-entrypoint-initdb.d/
+ bash init_sonarqube_db.sh
+ exit                                    # Salir del contenedor
+ ```
+
+Ese fichero se encuentra en el proyecto, en _docker/laradock/postgres/docker-entrypoint-initdb.d/init_sonarqube_db.sh_. 
+Si da algún problema en Windows del tipo _End of file_, sólo hay que editarlo con el IDE y añadirle un salto
+de línea al final.
+
+Si al iniciar el contenedor de sonarqube **el contenedor se apaga a los pocos segundos**, casi seguro que el problema viene derivado de la 
+creación o conexión con la base de datos. Revisar la BD, y crearla de cero si es necesario con el script definido en el punto 1
+de este apartado.
+
+### Lanzar análisis (scanner)
+
+Para ejecutar un análisis de Sonarqube, instalar el [scanner](https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/) en tu PC de desarrollo,
+y después ejecutar en la línea de comandos de tu PC local, en la raiz del proyecto: 
+```bash
+sonar-scanner
+```
+
 
 ## ElasticSearch con Docker
 
