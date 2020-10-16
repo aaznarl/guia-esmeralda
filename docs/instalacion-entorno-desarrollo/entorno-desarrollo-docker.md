@@ -7,21 +7,112 @@ para todos los posibles contenedores.
 
 
 
-## Instalar Docker en el PC
+## Instalar Docker en Windows 10 con WSL-2
 
 Como referencia básica, la propia documentación: [https://laradock.io/](https://laradock.io/):
 
 1. Instalar [Docker-desktop](https://docs.docker.com/docker-for-windows/install/). 
    Es necesario registrarse (crearse un usuario) para que te habilite la descarga
-2. Testear que funciona bien, ejecutando en la línea de comandos 
+2. Testear que funciona bien, ejecutando en la línea de comandos:  
    ```bash
    docker --version
+   ``` 
+3. Añadir tu cuenta de usuario en el grupo local del ordenador "_Docker users_"
+4. Instalar WSL-2 en Windows siguiendo paso a paso esta guía: [Windows Subsystem for Linux Installation Guide for Windows 10](https://docs.microsoft.com/en-us/windows/wsl/install-win10)
+5. Activar en _Docker Desktop_ WSL-2. Se abre pinchando en el icono de la ballena de
+   docker abajo a la derecha en los iconos del escritorio de Windows, y marcando la opción
+   _Use the WSL 2 based engine_:  
+   ![Imagen activar WSL-2 en Docker Desktop](./imagenes/activar_wsl-2_en_docker_desktop.png)
+6. Instalar la máquina de Ubuntu 20.04 LTS desde la tienda de Microsoft:
+   ![Ubuntu en la Microsoft Store](./imagenes/Ubuntu_en_Microsoft_Store.png)
+7. Asegurarnos de que la máquina Ubuntu funcionará con la versión 2 de WSL. Para ello, abrir una consola _powershell_,
+   y si se encontrase en la versión 1, pasarla a la versión 2:  
+   ```shell script
+   wsl.exe -l -v                           # Listar máquinas y versión en que funcionan
+   wsl.exe --set-version Ubuntu-20.04 2    # Pasar la máquina a versión 2 
    ```
-3. Pulsar con el botón derecho en el icono de docker donde los iconos de la barra de Windows al lado del reloj,
-   opción "_Settings_", después "_Shared drives_", y verificar que está marcada la unidad donde se encuentra
-   el proyecto:
-   ![Imagen opción Shared Drives](./imagenes/docker_settings_shared_drives.png)   
-4. Añadir tu cuenta de usuario en el grupo local del ordenador "_Docker users_"
+   Se puede observar en este pantallazo:  
+   ![Configurar WSL-2 en máquina Ubuntu](./imagenes/poner_wsl2_en_maquina_ubuntu.png)   
+7. Una vez instalada, buscarla en los programas instalados en Windows y entrar en esa máquina Linux de Ubuntu.
+8. Dentro de la máquina Ubuntu, ejecutar ```wsl.exe sysctl -w vm.max_map_count=262144``` (lo de ponerlo con ".exe" no es un
+   error, es así aunque estemos en un entorno linux) para asegurar que después algunos contenedores, como por ejemplo 
+   el de _elasticsearch_ tiene suficiente memoria para funcionar y no arroje un error 78:  
+   ```shell script
+   wsl.exe sysctl vm.max_map_count              # Mostrar el valor actual
+   wsl.exe sysctl -w vm.max_map_count=262144    # Establecerlo en 262144 
+   ```
+9. Activar la integración de la máquina Ubuntu con _Docker Desktop_, para lo cual abre la configuración de _Docker Desktop_
+   y activa la "_WSL Integration" para esa máquina:    
+   ![Activar WSL Integration](./imagenes/activar_wsl-integration_para_maquina_ubuntu.png)
+
+
+Los pasos que vienen ahora están dirigidos a montar el proyecto **DENTRO DE LA MÁQUINA LINUX**, lo cual es de **vital
+importancia** para que el rendimiento de docker pueda aprovechar la extrema velocidad de WSL-2. Si no se hace exactamente así,
+el rendimiento caerá y será más de **10 veces más lento**.
+
+## Levantar el proyecto en contenedores docker
+
+Si todavía no has "dockerizado" tu proyecto, es mejor pasar a la sección siguiente y después volver a este punto.
+
+Este es el resúmen de dónde se va a ejecutar cada cosa:
+
+- **Código fuente**: Se encontrará en la máquina Ubuntu. **NO se encontrará en una ruta Windows**, ni siquiera aunque la ruta
+  pudiera ser alcanzada desde el linux a través de "_mnt_" con algo como ```/mnt/c/proyectos/mi-proyecto```.
+- **Comandos de docker-compose**: serán lanzados desde dentro de la máquina Ubuntu
+- **Yarn o npm**: serán lanzados desde dentro de la máquina Ubuntu
+- **Composer**: serán lanzados desde dentro de la máquina Ubuntu
+- **Navegador para probar la aplicación** mientras se desarrolla, con hot reloading: se abrirá el firefox desde el host Windows
+- **VSCode para editar el código fuente**: se abrirá desde el host Windows
+
+Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
+
+1. Busca la máquina Ubuntu y entra en ella
+2. En una ruta propia del sistema linux de esa máquina, clona el código fuente del proyecto (supongamos que es el proyecto _dracma_):  
+   ```shell script
+   cd /var
+   mkdir proyectos
+   git clone http://gitlab.cnmc.com/rrhh/dracma.git
+   cd dracma
+   ```
+3. Continuando **dentro de la máquina Ubuntu**, instala los paquetes:  
+   ```shell script
+   cd /var/proyectos/dracma
+   
+   yarn install              # Instalar paquetes javascript
+   composer install          # Instalar paquetes php
+   
+   cp .env.example .env   
+   php artisan key:generate  # Generar key de la aplicación
+    
+   cd docker                 # Ubicación de docker-compose.yml en este proyecto
+   cp docker-compose.yml.example docker-compose.yml
+   ```
+4. Levanta todos los contenedores de la aplicación:
+   ```shell script
+   cd /var/proyectos/dracma/docker   # path donde está docker-compose.yml
+   sudo docker-compose up -d    # Levantar contenedores definidos en docker-compose.yml
+   sudo docker-compose ps       # Verificar situación
+   ```
+5. Continuando **denro de la máquina Ubuntu**, levanta el servidor-proxy de Laravel mix para el _autoreloading_, es decir, que 
+   el navegador web se actualice automáticamente cuando vas modificando el código fuente, sin necesidad de pulsar F5 para
+   recargar la página: 
+   ```shell script
+   cd /var/proyectos/dracma    # Raíz del proyecto
+   yarn watch                  # Pulsar Ctrl-z para pararlo
+   ```  
+   ![yarn watch en máquina Ubuntu](./imagenes/yarn_watch_dentro_de_ubuntu.png)
+6. En Windows, **fuera de la máquina Ubuntu**, abrir el firefox (o cualquier otro navegador) y escribir la dirección
+   que nos ha indicado el comando ```yarn watch``` del punto anterior. En este caso se puede ver que 
+   es [http://172.17.53.248:3002](http://172.17.53.248:3002).    
+   Cada vez que modifiquemos el código fuente de la aplicación, la web se **actualizará automáticamente** en el navegador.
+7. Para modificar el código fuente, y programar, hemos de tener instalado [Visual Studio Code](https://code.visualstudio.com/),
+   y activar la extensión **Remote - WSL**.
+8. Abrir el explorador de Windows, y escribir en el path la ruta ```\\wsl$\Ubuntu-20.04\var\proyectos\dracma```, donde
+   debemos poder observar todos los ficheros del proyecto. Esta es la forma de acceder a los ficheros de la máquina linux
+   desde el navegador de Windows.         
+9. En _VSCode_, abrir el proyecto mediante la opción del menú ```File -> Open folder```, especificar la ruta
+   ```\\wsl$\Ubuntu-20.04\var\proyectos\dracma```, y comenzar a modificar el código fuente, observando cómo se 
+   recarga automáticamente la web en el navegador abierto.
 
 
 ## Incorporar Docker al proyecto Laravel
