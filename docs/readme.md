@@ -10,7 +10,7 @@ features:
   details: Construidos con el framework Vue para la parte frontend
 - title: GraphQL
   details: Y utilizando una API GraphQL, la mejor amiga de un desarrollador web
-footer: MIT Licensed | Copyright © 2019-Andrés Aznar
+footer: MIT Licensed | Copyright © 2020-Andrés Aznar
 ---
 
 

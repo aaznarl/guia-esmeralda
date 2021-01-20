@@ -194,12 +194,14 @@ Para crear el model seguir estos pasos:
 <?php
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Objetivo extends Model
 {
     use SoftDeletes;
+    use HasFactory;
 
     //public $timestamps = false;  // Descomentar si no queremos que tenga los timestamps (created_at, updated_at)
     protected $table = 'objetivos';    
@@ -263,40 +265,50 @@ class Objetivo extends Model
 
 ## Crear la Factory
 
-Para crear el fichero, ejecutar ([referencia](https://laravel.com/docs/5.8/database-testing#generating-factories)):
+Para crear el fichero, ejecutar ([referencia](https://laravel.com/docs/8.x/database-testing#creating-factories)):
 
 ```bash
 php artisan make:factory PostFactory --model=Post
 ```
 
-Ejemplo de código completo para crear una factory:
+Ejemplo de código completo para crear una factory (Laravel v8 o superior):
 
 ```php
 <?php
-use Faker\Generator as Faker;
+
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
 use App\Models\User;
 use Carbon\Carbon;
 
-/** @var \Illuminate\Database\Eloquent\Factory $factory */
-$factory->define(User::class, function (Faker $faker) {
-    static $password;
-    
-    // A todos los usuarios les ponemos de contraseña "secret"
-    return [
-        'name' => substr( $faker->name, 0, User::MAX_LONG_NAME ),
-        'observaciones' => $faker->realText(User::MAX_LONG_OBSERVACIONES / random_int(1,6)),
-        'email' => $faker->unique()->safeEmail,
-        'email_verified_at' => now(),
-        'vegetariano' => random_int(1,3) === 1,
-        'codigo' => Str::random( random_int(2,5) ),
-        'password' => $password ?: $password = bcrypt('secret'),
-        'remember_token' => Str::random(10),
-        'fechaBaja' => random_int(1,3) === 1
-            ? Carbon::create( random_int(2010, 2019), random_int(0,11), random_int(1,28) )
-            : null,        
-    ];
-});
+class UserFactory extends Factory
+{
+    protected $model = User::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @return array
+     */
+    public function definition()
+    {
+        // A todos los usuarios les ponemos de contraseña "secret"
+        return [
+            'name' => substr( $this->faker->name, 0, User::MAX_LONG_NAME ),
+            'observaciones' => $this->faker->realText(User::MAX_LONG_OBSERVACIONES / random_int(1,6)),
+            'email' => $this->faker->unique()->safeEmail,
+            'email_verified_at' => now(),
+            'vegetariano' => random_int(1,3) === 1,
+            'codigo' => Str::random( random_int(2,5) ),
+            'password' => $password ?: $password = bcrypt('secret'),
+            'remember_token' => Str::random(10),
+            'fechaBaja' => random_int(1,3) === 1
+                ? Carbon::create( random_int(2010, 2019), random_int(0,11), random_int(1,28) )
+                : null,        
+        ];
+    }
+
+}
 ```
 
 
@@ -330,6 +342,7 @@ Existen 2 tipos de seeders:
 ```php
 <?php
 use Illuminate\Database\Seeder;
+use DB;
 
 class RolesSeeder extends Seeder
 {
@@ -386,12 +399,12 @@ class ObjetivosSeeder extends Seeder
         if (app()->environment() == 'production') return;  // Protección
         
         // Puedo crear 4 usuarios si no hubiera un UserSeeder antes (que debería haberlo):
-        factory(User::class, 4)->create();
+        User::factory()->times( 4 )->create();
         
         User::all()->each( function( User $usuario)
         {
             $usuario->objetivos()->saveMany(
-                factory( Objetivo::class, random_int(1,3) )->make()
+                Objetivo::factory()->times( random_int(1,3) )->make()
             );
         });
         
@@ -431,19 +444,19 @@ class CuentaSeeder extends Seeder
         {
             // Relación 1 a N: a cada usuario le añade varias cuentas (entre 1 y 2)
             $usuario->cuentas()->saveMany(     
-                factory( Cuenta::class, random_int(1, 2) )->make()
+                Cuenta::factory()->times( random_int(1, 2) )->make()
             );
             
             $usuario->cuentas->each( function (Cuenta $cuenta)
             {
                 /** @var Collection $etiquetas */       // Creamos varias etiquetas  (relación 1 a N)
                 $etiquetas = $cuenta->etiquetas()->saveMany(
-                    factory( EtiquetaCuenta::class, random_int(2,6) )->make()
+                    EtiquetaCuenta::factory()->times( random_int(2,6) )->make()
                 );
                 
                 /** @var Collection $asientos */        // Le añadimos varios asientos (Relación 1 a N) 
                 $asientos = $cuenta->asientos()->saveMany(
-                    factory( Asiento::class, random_int(6, 20) )->make()
+                    Asiento::factory()->times( random_int(6, 20) )->make()
                 );
                 
                 // Asociamos cada asiento con etiquetas   (Relación N a N entre Asientos y Etiquetas)

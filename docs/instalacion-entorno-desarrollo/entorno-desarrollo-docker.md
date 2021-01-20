@@ -5,11 +5,13 @@ para todos los posibles contenedores.
 
 [[TOC]]
 
+## Referencias
+
+- Como referencia básica, la propia documentación: [https://laradock.io/](https://laradock.io/)
+- [Docker Desktop: WSL 2 Best practices](https://www.docker.com/blog/docker-desktop-wsl-2-best-practices/) (4 mayo 2020)
 
 
 ## Instalar Docker en Windows 10 con WSL-2
-
-Como referencia básica, la propia documentación: [https://laradock.io/](https://laradock.io/):
 
 1. Instalar [Docker-desktop](https://docs.docker.com/docker-for-windows/install/). 
    Es necesario registrarse (crearse un usuario) para que te habilite la descarga
@@ -39,9 +41,25 @@ Como referencia básica, la propia documentación: [https://laradock.io/](https:
    el de _elasticsearch_ tiene suficiente memoria para funcionar y no arroje un error 78:  
    ```shell script
    wsl.exe sysctl vm.max_map_count              # Mostrar el valor actual
-   wsl.exe sysctl -w vm.max_map_count=262144    # Establecerlo en 262144 
+   wsl.exe sysctl -w vm.max_map_count=262144    # Establecerlo en 262144
+   
+   # También se puede editar directamente el fichero 
+   # /proc/sys/vm/max_map_count y ponerle el valor 262144  
+   ```  
+   O mejor, para hacerlo persistente, añadir esta línea en el fichero
+   ```/etc/sysctl.conf``` y después ejecutar ```sudo sysctl -p``` para recargar la configuración:
+   ```shell script
+   vm.max_map_count=262144
    ```
-9. Activar la integración de la máquina Ubuntu con _Docker Desktop_, para lo cual abre la configuración de _Docker Desktop_
+9. Dentro de la máquina Ubuntu, añadir esto al fichero ```~/.profile``` del usuario con el que entraste en la máquina
+   ([referencia](https://www.docker.com/blog/docker-desktop-wsl-2-best-practices/)):
+   ```shell script
+   cd ~
+   
+   # Añadir esta línea al final del fichero .profile
+   export DOCKER_BUILDKIT=1.
+   ```   
+10. Activar la integración de la máquina Ubuntu con _Docker Desktop_, para lo cual abre la configuración de _Docker Desktop_
    y activa la "_WSL Integration" para esa máquina:    
    ![Activar WSL Integration](./imagenes/activar_wsl-integration_para_maquina_ubuntu.png)
 
@@ -71,6 +89,7 @@ Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
    ```shell script
    cd /var
    mkdir proyectos
+   cd proyectos
    git clone http://gitlab.cnmc.com/rrhh/dracma.git
    cd dracma
    ```
@@ -264,6 +283,18 @@ phpunit
 docker-compose down
 ```
 
+**Reclaim cached memory**: WSL 2 automatically reclaims memory when it is freed, to make it available to 
+Windows processes. However, if the kernel decides to keep content in cache (and with Docker, it tends to 
+happen quite a lot), the amount of memory reclaimed might not be sufficient.
+
+To reclaim more memory, after stopping your containers, you can run this as root to drop the kernel 
+page cache and make WSL 2 reclaim memory used by its VM:
+ 
+```bash 
+echo 1 > /proc/sys/vm/drop_caches
+```
+
+
 Otras referencias:
 
 - [View log files](https://laradock.io/documentation/#view-the-log-files) (de los containers)
@@ -433,7 +464,7 @@ Para usar pgAdmin, la aplicación que te permite acceder a las bases de datos po
 Para instalar Sonarqube, tener en cuenta la [documentación](https://laradock.io/documentation/). 
 Y está funcionando en:
  
-   [http://localhost:9000](http://localhost:9000) (usuario/clave: admin/admin).
+   [http://localhost:9000](http://localhost:9000) (usuario: **admin**, clave: **admin**).
    
 El contenedor de Sonarqube se levanta con el comando 
  ```bash
@@ -467,12 +498,17 @@ de este apartado.
 
 ### Lanzar análisis (scanner)
 
-Para ejecutar un análisis de Sonarqube, instalar el [scanner](https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/) en tu PC de desarrollo,
+Para ejecutar un análisis de Sonarqube, instalar el [scanner](https://docs.sonarqube.org/latest/analysis/scan/sonarscanner/) en tu máquina de desarrollo,
 y después ejecutar en la línea de comandos de tu PC local, en la raiz del proyecto: 
 ```bash
 sonar-scanner
 ```
 
+Si la máquina de desarrollo es linux, lo mejor es añadir la ruta del escaner al path. Es decir, editar el fichero ```/etc/profile``` y añadir esta línea:
+
+```bash
+PATH=$PATH:/var/proyectos/sonar-scanner-cli-4.5.0.2216-linux/bin
+```
 
 ## ElasticSearch con Docker
 

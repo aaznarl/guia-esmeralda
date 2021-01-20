@@ -2,7 +2,16 @@ module.exports =
 {
     title: 'Guía Esmeralda',
     description: 'Guía principalmente de desarrollo, que sirve como referencia para mostrar la forma de hacer ciertas cosas de forma opinada',
-    
+
+    plugins: [
+        [
+            '@vuepress/google-analytics',
+            {
+                'ga': 'UA-180688623-1'
+            }
+        ]
+    ],
+
     markdown: {
         // options for markdown-it-anchor
         anchor: { permalink: true },
