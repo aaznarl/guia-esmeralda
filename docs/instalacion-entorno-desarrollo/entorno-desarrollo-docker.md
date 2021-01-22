@@ -36,17 +36,7 @@ para todos los posibles contenedores.
    Se puede observar en este pantallazo:  
    ![Configurar WSL-2 en máquina Ubuntu](./imagenes/poner_wsl2_en_maquina_ubuntu.png)   
 7. Una vez instalada, buscarla en los programas instalados en Windows y entrar en esa máquina Linux de Ubuntu.
-8. Dentro de la máquina Ubuntu, ejecutar ```wsl.exe sysctl -w vm.max_map_count=262144``` (lo de ponerlo con ".exe" no es un
-   error, es así aunque estemos en un entorno linux) para asegurar que después algunos contenedores, como por ejemplo 
-   el de _elasticsearch_ tiene suficiente memoria para funcionar y no arroje un error 78:  
-   ```shell script
-   wsl.exe sysctl vm.max_map_count              # Mostrar el valor actual
-   wsl.exe sysctl -w vm.max_map_count=262144    # Establecerlo en 262144
-   
-   # También se puede editar directamente el fichero 
-   # /proc/sys/vm/max_map_count y ponerle el valor 262144  
-   ```  
-   O mejor, para hacerlo persistente, añadir esta línea en el fichero
+8. Para evitar el error por falta de memoria en la variable "max_map_count" es necesario añadir esta línea en el fichero
    ```/etc/sysctl.conf``` y después ejecutar ```sudo sysctl -p``` para recargar la configuración:
    ```shell script
    vm.max_map_count=262144
