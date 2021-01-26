@@ -37,7 +37,7 @@ para todos los posibles contenedores.
    ![Configurar WSL-2 en máquina Ubuntu](./imagenes/poner_wsl2_en_maquina_ubuntu.png)   
 7. Una vez instalada, buscarla en los programas instalados en Windows y entrar en esa máquina Linux de Ubuntu.
 8. Para evitar el error por falta de memoria en la variable "max_map_count" es necesario añadir esta línea en el fichero
-   ```/etc/sysctl.conf``` y después ejecutar ```sudo sysctl -p``` para recargar la configuración:
+   ```sudo nano /etc/sysctl.conf``` y después ejecutar ```sudo sysctl -p``` para recargar la configuración:
    ```shell script
    vm.max_map_count=262144
    ```
@@ -68,7 +68,7 @@ Este es el resúmen de dónde se va a ejecutar cada cosa:
   pudiera ser alcanzada desde el linux a través de "_mnt_" con algo como ```/mnt/c/proyectos/mi-proyecto```.
 - **Comandos de docker-compose**: serán lanzados desde dentro de la máquina Ubuntu
 - **Yarn o npm**: serán lanzados desde dentro de la máquina Ubuntu
-- **Composer**: serán lanzados desde dentro de la máquina Ubuntu
+- **Composer**: serán lanzados desde dentro de la máquina Ubuntu, más concretamente desde el contenedor de "Workspace"
 - **Navegador para probar la aplicación** mientras se desarrolla, con hot reloading: se abrirá el firefox desde el host Windows
 - **VSCode para editar el código fuente**: se abrirá desde el host Windows
 
@@ -80,29 +80,47 @@ Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
    cd /var
    mkdir proyectos
    cd proyectos
-   git clone http://gitlab.cnmc.com/rrhh/dracma.git
+   git clone https://git.cnmc.es/scm/drac/dracma.git
    cd dracma
    ```
 3. Continuando **dentro de la máquina Ubuntu**, instala los paquetes:  
    ```shell script
    cd /var/proyectos/dracma
    
+   #Instalar nodejs, npm y yarn
+   sudo apt update
+   sudo apt install nodejs
+   sudo apt install npm
+   npm install -g yarn
+
    yarn install              # Instalar paquetes javascript
-   composer install          # Instalar paquetes php
-   
+      
    cp .env.example .env   
-   php artisan key:generate  # Generar key de la aplicación
-    
-   cd docker                 # Ubicación de docker-compose.yml en este proyecto
-   cp docker-compose.yml.example docker-compose.yml
    ```
-4. Levanta todos los contenedores de la aplicación:
+4.  En el fichero **docker/.env.example** hay que modificar dos líneas **imprescindibles** para el correcto funcionamiento de los contenedores, estás líneas son:
+   ```shell script
+    
+   cd docker # Ubicación de .env de docker
+
+   # Ambas lineas deben quedarse en blanco (del fichero .env.example de la carpeta docker)
+   COMPOSE_CONVERT_WINDOWS_PATHS=   
+   DOCKER_SYNC_STRATEGY= 
+
+   cp .env.example .env
+   ```
+
+   
+
+  
+
+5. Levanta todos los contenedores de la aplicación:
    ```shell script
    cd /var/proyectos/dracma/docker   # path donde está docker-compose.yml
+   sudo docker-compose build    # Este comando es necesario la primera vez, para generar las imágenes de los contenedores
    sudo docker-compose up -d    # Levantar contenedores definidos en docker-compose.yml
    sudo docker-compose ps       # Verificar situación
    ```
-5. Continuando **denro de la máquina Ubuntu**, levanta el servidor-proxy de Laravel mix para el _autoreloading_, es decir, que 
+6. Continuando **denro de la máquina Ubuntu**, levanta el servidor-proxy de Laravel mix para el _autoreloading_, es decir, que 
    el navegador web se actualice automáticamente cuando vas modificando el código fuente, sin necesidad de pulsar F5 para
    recargar la página: 
    ```shell script
@@ -110,16 +128,16 @@ Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
    yarn watch                  # Pulsar Ctrl-z para pararlo
    ```  
    ![yarn watch en máquina Ubuntu](./imagenes/yarn_watch_dentro_de_ubuntu.png)
-6. En Windows, **fuera de la máquina Ubuntu**, abrir el firefox (o cualquier otro navegador) y escribir la dirección
+7. En Windows, **fuera de la máquina Ubuntu**, abrir el firefox (o cualquier otro navegador) y escribir la dirección
    que nos ha indicado el comando ```yarn watch``` del punto anterior. En este caso se puede ver que 
    es [http://172.17.53.248:3002](http://172.17.53.248:3002).    
    Cada vez que modifiquemos el código fuente de la aplicación, la web se **actualizará automáticamente** en el navegador.
-7. Para modificar el código fuente, y programar, hemos de tener instalado [Visual Studio Code](https://code.visualstudio.com/),
+8. Para modificar el código fuente, y programar, hemos de tener instalado [Visual Studio Code](https://code.visualstudio.com/),
    y activar la extensión **Remote - WSL**.
-8. Abrir el explorador de Windows, y escribir en el path la ruta ```\\wsl$\Ubuntu-20.04\var\proyectos\dracma```, donde
+9. Abrir el explorador de Windows, y escribir en el path la ruta ```\\wsl$\Ubuntu-20.04\var\proyectos\dracma```, donde
    debemos poder observar todos los ficheros del proyecto. Esta es la forma de acceder a los ficheros de la máquina linux
    desde el navegador de Windows.         
-9. En _VSCode_, abrir el proyecto mediante la opción del menú ```File -> Open folder```, especificar la ruta
+10. En _VSCode_, abrir el proyecto mediante la opción del menú ```File -> Open folder```, especificar la ruta
    ```\\wsl$\Ubuntu-20.04\var\proyectos\dracma```, y comenzar a modificar el código fuente, observando cómo se 
    recarga automáticamente la web en el navegador abierto.
 
