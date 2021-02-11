@@ -32,6 +32,7 @@ para todos los posibles contenedores.
    ```shell script
    wsl.exe -l -v                           # Listar máquinas y versión en que funcionan
    wsl.exe --set-version Ubuntu-20.04 2    # Pasar la máquina a versión 2 
+   wslconfig /setdefault Ubuntu-20.04      # Poner por defecto Ubuntu
    ```
    Se puede observar en este pantallazo:  
    ![Configurar WSL-2 en máquina Ubuntu](./imagenes/poner_wsl2_en_maquina_ubuntu.png)   
@@ -58,6 +59,20 @@ Los pasos que vienen ahora están dirigidos a montar el proyecto **DENTRO DE LA 
 importancia** para que el rendimiento de docker pueda aprovechar la extrema velocidad de WSL-2. Si no se hace exactamente así,
 el rendimiento caerá y será más de **10 veces más lento**.
 
+::: warning Si hay problemas con la conexión a internet:
+   ```shell script 
+      sudo nano /etc/resolv.conf
+   ```
+   - Descomentar:
+   ```shell script 
+      generateResolvConf = false
+   ```
+   - Añadir:
+   ```shell script
+      Nameserver 8.8.8.8 #O las DNS del equipo local
+   ```
+:::
+
 ## Levantar el proyecto en contenedores docker
 
 Si todavía no has "dockerizado" tu proyecto, es mejor pasar a la sección siguiente y después volver a este punto.
@@ -82,6 +97,14 @@ Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
    cd proyectos
    git clone https://git.cnmc.es/scm/drac/dracma.git
    cd dracma
+   git config core.ignorecase false
+   ```
+   Añadir laradock y mssql al proyecto, estando en la raiz del proyecto:
+   ```bash
+   git submodule add https://github.com/laradock/laradock.git docker/laradock/
+   git submodule add https://github.com/microsoft/mssql-docker.git docker/mssql-docker/
+   git submodule init
+   git submodule update
    ```
 3. Continuando **dentro de la máquina Ubuntu**, instala los paquetes:  
    ```shell script
@@ -91,7 +114,7 @@ Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
    sudo apt update
    sudo apt install nodejs
    sudo apt install npm
-   npm install -g yarn
+   sudop npm install -g yarn
 
    yarn install              # Instalar paquetes javascript
       
@@ -108,17 +131,16 @@ Para levantar el proyecto y ponerse a desarrollar en el mismo, hay que:
 
    cp .env.example .env
    ```
-
-   
-
-  
-
 5. Levanta todos los contenedores de la aplicación:
    ```shell script
    cd /var/proyectos/dracma/docker   # path donde está docker-compose.yml
    sudo docker-compose build    # Este comando es necesario la primera vez, para generar las imágenes de los contenedores
    sudo docker-compose up -d    # Levantar contenedores definidos en docker-compose.yml
    sudo docker-compose ps       # Verificar situación
+   #Ejecutar composer install en el contenedor workspace
+   sudo docker-compose exec workspace bash
+   composer install
+   php artisan storage:link   #Nos permitirá visualizar las imágenes de los módulos
    ```
 6. Continuando **denro de la máquina Ubuntu**, levanta el servidor-proxy de Laravel mix para el _autoreloading_, es decir, que 
    el navegador web se actualice automáticamente cuando vas modificando el código fuente, sin necesidad de pulsar F5 para
