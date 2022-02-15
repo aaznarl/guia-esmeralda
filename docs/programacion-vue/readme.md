@@ -675,6 +675,76 @@ y por último algo de css para hacer más largo el desplegable:
 }
 ```
 
+## Teclas rápidas
+
+La mejor forma de implementar teclas de acceso rápido en la interfaz web, es utilizar la maravillosa 
+[librería javascript Mousetrap](https://craig.is/killing/mice), que no tiene ninguna dependencia externa y además ocupa sólo 2 KB comprimida.
+
+Lo primero sería añadirla al proyecto:
+
+```shell
+yarn add mousetrap
+```
+
+Para que siempre esté disponible en todos los componentes, hay que cargarla en la instancia Vue genérica en "main.js" (ó "app.js", 
+o el fichero principal que sea:
+
+```javascript
+import MouseTrap from 'mousetrap';
+Vue.prototype.$mousetrap = new MouseTrap();
+```
+
+y entonces ya podría usarse en cualquier componente Vue, siendo el mejor lugar para definir las teclas rápidas la **función mounted**:
+
+```javascript
+mounted()
+{
+   this.$mousetrap.reset();
+   this.$mousetrap.bind( 'a', this.botonAnadirAsientoClick );
+   this.$mousetrap.bind( 'esc', () => alert('Muy bien por pulsar ESC! vamos a salir') );
+}
+```
+
+
+::: warning ¡cuidado con el reset! 
+Si se usa en un componente **hijo** del contenedor (o un componente Vue de tipo página), el reset anula al 
+moustrap del hijo y puede pasar al revés.
+:::
+
+
+
+
+Si por alguna razón no quisiéramos cargar la librería en el bundle de la aplicación, la forma clásica de tenerla disponible sería:
+
+```html
+<head> … </head>
+<body>
+  Cositas
+
+  <!-- Al final del todo -->
+  <script src=https://cdn.jsdelivr.net/npm/mousetrap@1.6.3/mousetrap.min.js></script>
+  <script>
+     // Fallback por si falla la CDN de Mousetrap
+     if (typeof Mousetrap === undefined) {
+        document.write('<script src="js/mousetrap.min.js">\x3C/script>');
+     }
+  </script>
+</body>
+```
+
+en cuyo caso se usaría así en el compoenente Vue:
+
+```javascript
+mounted()
+{
+   Mousetrap.reset();
+   Mousetrap.bind( 'a', this.botonAnadirAsientoClick );
+   Mousetrap.bind( 'esc', () => alert('Muy bien por pulsar ESC! vamos a salir') );
+}
+```
+
+
+
 
 
 ## Componentes de ejemplo:
